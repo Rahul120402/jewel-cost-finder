@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jewel Cost Finder Pro + Universal Scanner</title>
+    <title>Jewel Cost Pro + Multi-Scanner</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
@@ -26,23 +26,28 @@
         h1 { color: #1f4037; font-size: 22px; margin-bottom: 20px; text-align: center; }
 
         /* Scanner Styling */
-        #scanner-ui { display: none; margin-bottom: 20px; border: 2px solid #1f4037; border-radius: 12px; overflow: hidden; background: #000; }
+        #scanner-ui { display: none; margin-bottom: 20px; border-radius: 12px; overflow: hidden; background: #000; position: relative; }
         #reader { width: 100%; }
-        .cam-select { width: 100%; padding: 10px; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; }
+        
+        /* Visual Indicator for Successful Scan */
+        #scan-indicator {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(46, 204, 113, 0.5); display: none; z-index: 10;
+            pointer-events: none; justify-content: center; align-items: center;
+            color: white; font-weight: bold; font-size: 24px;
+        }
 
         .btn { padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; width: 100%; margin-bottom: 10px; }
         .scanner-btn { background: #ff512f; color: white; }
         .search-btn { background: #1f4037; color: white; }
         .clear-btn { background: #eee; color: #333; }
 
-        .input-group { margin-bottom: 15px; }
-        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; }
+        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; margin-bottom: 15px; }
 
         .chart-container { margin-top: 20px; display: none; background: #f9f9f9; padding: 15px; border-radius: 12px; height: 280px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
         .summary-row td { background: #eef6f3; font-weight: bold; border-top: 2px solid #1f4037; }
-
         .history-item { background: white; padding: 10px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; border-left: 4px solid #1f4037; font-size: 13px; }
     </style>
 </head>
@@ -52,16 +57,18 @@
     <div class="container">
         <h1>Jewel Cost Finder</h1>
 
-        <button class="btn scanner-btn" id="toggleBtn" onclick="startScanner()">📷 Start Scanner</button>
+        <button class="btn scanner-btn" id="toggleBtn" onclick="startScanner()">📷 Open Scanner</button>
+        
         <div id="scanner-ui">
+            <div id="scan-indicator">SUCCESS!</div>
             <div id="reader"></div>
-            <select id="cameraSelection" class="cam-select" onchange="changeCamera(this.value)"></select>
-            <button class="btn clear-btn" onclick="stopScanner()">Close Camera</button>
+            <div style="padding: 10px; background: #fff;">
+                <select id="cameraSelection" style="width:100%; padding:8px; margin-bottom:10px;" onchange="changeCamera(this.value)"></select>
+                <button class="btn clear-btn" onclick="stopScanner()">Close Camera</button>
+            </div>
         </div>
         
-        <div class="input-group">
-            <input type="text" id="jewelCode" placeholder="Enter Codes or Scan">
-        </div>
+        <input type="text" id="jewelCode" placeholder="Scanned codes will appear here...">
         
         <div style="display:flex; gap:10px;">
             <button class="btn search-btn" onclick="getCost()">Analyze & Search</button>
@@ -69,10 +76,7 @@
         </div>
 
         <div id="result"></div>
-
-        <div id="chartWrapper" class="chart-container">
-            <canvas id="costChart"></canvas>
-        </div>
+        <div id="chartWrapper" class="chart-container"><canvas id="costChart"></canvas></div>
     </div>
 
     <div class="history-panel">
@@ -85,58 +89,81 @@
 <script>
     let myChart = null;
     let html5QrCode = null;
+    let isScanningPaused = false;
+    const beep = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
 
-    // --- UNIVERSAL SCANNER LOGIC ---
     async function startScanner() {
         const scannerUi = document.getElementById("scanner-ui");
         const camSelect = document.getElementById("cameraSelection");
+        
+        // Ensure old instances are cleaned up
+        if (html5QrCode) {
+            await html5QrCode.stop().catch(() => {});
+            html5QrCode = null;
+        }
+
         scannerUi.style.display = "block";
         document.getElementById("toggleBtn").style.display = "none";
 
         try {
             const devices = await Html5Qrcode.getCameras();
             if (devices && devices.length) {
-                // Fill camera dropdown
                 camSelect.innerHTML = devices.map(d => `<option value="${d.id}">${d.label}</option>`).join("");
-                
-                // Auto-start with back camera on mobile or default on desktop
-                const defaultId = devices.length > 1 ? devices[1].id : devices[0].id;
-                camSelect.value = defaultId;
-                initCamera(defaultId);
+                const backCam = devices.find(d => d.label.toLowerCase().includes('back')) || devices[0];
+                camSelect.value = backCam.id;
+                initCamera(backCam.id);
             }
         } catch (err) {
-            alert("Camera Error: Please ensure you are using HTTPS and have granted permissions.");
+            alert("Camera Error: Please grant permissions and use HTTPS.");
         }
     }
 
     function initCamera(cameraId) {
-        if (html5QrCode) html5QrCode.stop();
+        if (html5QrCode) html5QrCode.stop().then(() => startCam(cameraId));
+        else startCam(cameraId);
+    }
+
+    function startCam(id) {
         html5QrCode = new Html5Qrcode("reader");
-        html5QrCode.start(
-            cameraId, 
-            { fps: 10, qrbox: { width: 250, height: 150 } },
-            (decodedText) => {
-                const input = document.getElementById("jewelCode");
-                input.value = input.value ? input.value + ", " + decodedText : decodedText;
-                // Optional: stopScanner(); getCost(); 
+        html5QrCode.start(id, { fps: 10, qrbox: { width: 250, height: 150 } }, 
+        (decodedText) => {
+            if (isScanningPaused) return; // Prevent multiple scans of same item
+
+            // 1. Provide Feedback
+            isScanningPaused = true;
+            beep.play();
+            showIndicator();
+
+            // 2. Add Code
+            const input = document.getElementById("jewelCode");
+            let currentCodes = input.value.split(",").map(c => c.trim()).filter(c => c !== "");
+            if (!currentCodes.includes(decodedText)) {
+                currentCodes.push(decodedText);
+                input.value = currentCodes.join(", ");
             }
-        ).catch(err => console.error(err));
+
+            // 3. Pause for 2 seconds then allow next scan
+            setTimeout(() => { isScanningPaused = false; }, 2000);
+        }).catch(err => console.error(err));
     }
 
-    function changeCamera(id) {
-        initCamera(id);
+    function showIndicator() {
+        const ind = document.getElementById("scan-indicator");
+        ind.style.display = "flex";
+        setTimeout(() => { ind.style.display = "none"; }, 500);
     }
 
-    function stopScanner() {
+    function changeCamera(id) { initCamera(id); }
+
+    async function stopScanner() {
         if (html5QrCode) {
-            html5QrCode.stop().then(() => {
-                document.getElementById("scanner-ui").style.display = "none";
-                document.getElementById("toggleBtn").style.display = "block";
-            });
+            await html5QrCode.stop();
+            html5QrCode = null;
         }
+        document.getElementById("scanner-ui").style.display = "none";
+        document.getElementById("toggleBtn").style.display = "block";
     }
 
-    // --- DATA & CHART LOGIC ---
     async function getCost() {
         const inputStr = document.getElementById("jewelCode").value.trim();
         if (!inputStr) return;
@@ -160,7 +187,7 @@
         results.forEach(item => {
             const cost = parseFloat(item.cost) || 0;
             total += cost;
-            html += `<tr><td>${item.code}</td><td>${cost > 0 ? '₹ '+cost.toLocaleString('en-IN') : item.cost}</td></tr>`;
+            html += `<tr><td><strong>${item.code}</strong></td><td>${cost > 0 ? '₹ '+cost.toLocaleString('en-IN') : item.cost}</td></tr>`;
         });
         html += `<tr class="summary-row"><td>Total</td><td>₹ ${total.toLocaleString('en-IN')}</td></tr></table>`;
         document.getElementById("result").innerHTML = html;
@@ -175,7 +202,7 @@
             type: 'bar',
             data: {
                 labels: valid.map(r => r.code),
-                datasets: [{ data: valid.map(r => r.cost), backgroundColor: '#1f4037', borderRadius: 4 }]
+                datasets: [{ data: valid.map(r => r.cost), backgroundColor: '#1f4037' }]
             },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
@@ -208,6 +235,7 @@
         document.getElementById("jewelCode").value = "";
         document.getElementById("result").innerHTML = "";
         document.getElementById("chartWrapper").style.display = "none";
+        if(myChart) myChart.destroy();
     }
     renderHistory();
 </script>
