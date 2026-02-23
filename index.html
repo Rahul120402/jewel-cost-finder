@@ -7,7 +7,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        /* Modern UI Styling */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Segoe UI', sans-serif;
@@ -24,27 +23,26 @@
             padding: 20px; border-radius: 20px; height: fit-content;
         }
 
-        /* Scanner Box */
         #scanner-container { display: none; margin-bottom: 20px; border-radius: 15px; overflow: hidden; border: 3px solid #1f4037; position: relative; }
         #reader { width: 100%; background: #000; }
         #scan-flash {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(46, 204, 113, 0.6); display: none; z-index: 10;
-            justify-content: center; align-items: center; color: white; font-weight: bold;
+            justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 20px;
         }
 
-        /* Buttons & Inputs */
         .btn { padding: 14px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 10px; transition: 0.2s; }
         .scan-btn { background: #ff512f; color: white; }
         .search-btn { background: #1f4037; color: white; }
         .clear-btn { background: #eee; color: #333; }
         input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 15px; font-size: 16px; }
 
-        /* Results */
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
         .summary-row { background: #eef6f3; font-weight: bold; color: #1f4037; }
         .chart-box { margin-top: 30px; height: 300px; display: none; }
+        
+        .history-item { background: white; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #1f4037; cursor: pointer; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -56,19 +54,19 @@
         <button class="btn scan-btn" id="camBtn" onclick="toggleScanner()">📷 Open Barcode Scanner</button>
         
         <div id="scanner-container">
-            <div id="scan-flash">COPIED!</div>
+            <div id="scan-flash">SCANNED!</div>
             <div id="reader"></div>
             <div style="background: #fff; padding: 10px; text-align: center;">
                 <select id="camList" style="padding: 5px; margin-bottom: 5px; width: 80%;" onchange="restartWithCam(this.value)"></select>
-                <button class="btn clear-btn" style="margin:0; width: auto;" onclick="toggleScanner()">Close</button>
+                <button class="btn clear-btn" style="margin:0; width: auto;" onclick="toggleScanner()">Close Camera</button>
             </div>
         </div>
 
-        <input type="text" id="jewelCode" placeholder="Enter or Scan Codes (comma separated)">
+        <input type="text" id="jewelCode" placeholder="Scanned codes will appear here...">
         
         <div style="display:flex; gap:10px;">
-            <button class="btn search-btn" onclick="fetchPrices()">Search & Analyze</button>
-            <button class="btn clear-btn" onclick="resetAll()">Clear</button>
+            <button class="btn search-btn" onclick="fetchPrices()">Analyze & Search</button>
+            <button class="btn clear-btn" onclick="resetAll()">Clear All</button>
         </div>
 
         <div id="table-result"></div>
@@ -76,7 +74,7 @@
     </div>
 
     <div class="history-panel">
-        <h3>Recent Searches</h3>
+        <h3>Recent History</h3>
         <div id="histList" style="margin-top: 15px;"></div>
     </div>
 </div>
@@ -91,15 +89,22 @@
     async function toggleScanner() {
         const container = document.getElementById("scanner-container");
         if (scanner) {
-            await scanner.stop();
-            scanner = null;
-            container.style.display = "none";
-            document.getElementById("camBtn").innerText = "📷 Open Barcode Scanner";
+            await stopScanner();
         } else {
             container.style.display = "block";
-            document.getElementById("camBtn").innerText = "🛑 Stop Scanner";
+            document.getElementById("camBtn").innerText = "🛑 Close Scanner";
             startCamera();
         }
+    }
+
+    async function stopScanner() {
+        if (scanner) {
+            await scanner.stop();
+            scanner = null;
+        }
+        document.getElementById("scanner-container").style.display = "none";
+        document.getElementById("camBtn").innerText = "📷 Open Barcode Scanner";
+        document.getElementById("camBtn").style.display = "block";
     }
 
     async function startCamera() {
@@ -107,8 +112,6 @@
             const devices = await Html5Qrcode.getCameras();
             const select = document.getElementById("camList");
             select.innerHTML = devices.map(d => `<option value="${d.id}">${d.label}</option>`).join("");
-            
-            // Default to back camera on mobile
             const bestCam = devices.find(d => d.label.toLowerCase().includes('back')) || devices[0];
             select.value = bestCam.id;
             runScanner(bestCam.id);
@@ -121,12 +124,10 @@
         scanner.start(id, { fps: 10, qrbox: {width: 250, height: 150} }, (text) => {
             if (isPaused) return;
             
-            // Feedback
             isPaused = true;
             beep.play();
             document.getElementById("scan-flash").style.display = "flex";
             
-            // Add to input
             const box = document.getElementById("jewelCode");
             let items = box.value.split(",").map(i => i.trim()).filter(i => i !== "");
             if(!items.includes(text)) {
@@ -134,48 +135,48 @@
                 box.value = items.join(", ");
             }
 
-            // Cooldown for 2 seconds
             setTimeout(() => {
                 isPaused = false;
                 document.getElementById("scan-flash").style.display = "none";
-            }, 2000);
+            }, 1500); // 1.5 second gap between scans
         });
     }
 
     function restartWithCam(id) { runScanner(id); }
 
-    // --- DATA LOGIC ---
+    // --- SEARCH LOGIC ---
     async function fetchPrices() {
         const val = document.getElementById("jewelCode").value;
         if (!val) return;
+
+        // STOP CAMERA AUTOMATICALLY
+        await stopScanner();
+
         const codes = [...new Set(val.split(",").map(c => c.trim()).filter(c => c !== ""))];
-        
-        document.getElementById("table-result").innerHTML = "<p style='padding:20px; text-align:center;'>Searching...</p>";
+        document.getElementById("table-result").innerHTML = "<p style='padding:20px; text-align:center;'>Fetching Data...</p>";
 
         const results = await Promise.all(codes.map(c => 
             fetch(`https://script.google.com/macros/s/AKfycbwiXUnfpNL6gbRwKwsF-ONTkP2V4YzpZSgBxRUTwmOde3wYvo1Cmh5rlhN7thbXsAXEig/exec?code=${encodeURIComponent(c)}`)
             .then(r => r.json())
-            .then(data => ({ code: c, cost: data.cost }))
+            .then(data => ({ code: c, cost: data.cost })) // Mapping 'c' prevents undefined
             .catch(() => ({ code: c, cost: "Error" }))
         ));
 
         renderOutput(results);
+        saveHistory(codes, results);
     }
 
     function renderOutput(data) {
         let total = 0;
-        let table = `<table><tr><th>Jewel Code</th><th>Price</th></tr>`;
-        
+        let table = `<table><tr><th>Code</th><th>Price</th></tr>`;
         data.forEach(item => {
             const price = parseFloat(item.cost) || 0;
             total += price;
             table += `<tr><td><strong>${item.code}</strong></td><td>${price > 0 ? '₹ '+price.toLocaleString('en-IN') : item.cost}</td></tr>`;
         });
-        
         table += `<tr class="summary-row"><td>TOTAL</td><td>₹ ${total.toLocaleString('en-IN')}</td></tr></table>`;
         document.getElementById("table-result").innerHTML = table;
 
-        // Update Chart
         const valid = data.filter(d => !isNaN(parseFloat(d.cost)));
         if (valid.length > 0) {
             document.getElementById("chart-result").style.display = "block";
@@ -191,13 +192,38 @@
         }
     }
 
+    function saveHistory(codes, results) {
+        const hist = JSON.parse(localStorage.getItem("jewel_hist") || "[]");
+        const total = results.reduce((s, i) => s + (parseFloat(i.cost) || 0), 0);
+        hist.unshift({ time: new Date().toLocaleTimeString(), total, codes: codes.join(", "), results });
+        localStorage.setItem("jewel_hist", JSON.stringify(hist.slice(0, 5)));
+        renderHistoryList();
+    }
+
+    function renderHistoryList() {
+        const hist = JSON.parse(localStorage.getItem("jewel_hist") || "[]");
+        document.getElementById("histList").innerHTML = hist.map((h, i) => `
+            <div class="history-item" onclick='restore(${i})'>
+                <strong>₹ ${h.total.toLocaleString('en-IN')}</strong><br>
+                <small>${h.time} - ${h.codes.substring(0,25)}...</small>
+            </div>
+        `).join("");
+    }
+
+    window.restore = (i) => {
+        const h = JSON.parse(localStorage.getItem("jewel_hist"))[i];
+        document.getElementById("jewelCode").value = h.codes;
+        renderOutput(h.results);
+    }
+
     function resetAll() {
         document.getElementById("jewelCode").value = "";
         document.getElementById("table-result").innerHTML = "";
         document.getElementById("chart-result").style.display = "none";
         if(priceChart) priceChart.destroy();
     }
-</script>
 
+    renderHistoryList();
+</script>
 </body>
 </html>
