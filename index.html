@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jewel Cost Finder Pro + Universal Scanner</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1f4037, #99f2c8);
+            display: flex; justify-content: center; align-items: flex-start;
+            min-height: 100vh; padding: 20px;
+        }
+        .main-layout { display: flex; gap: 20px; width: 100%; max-width: 1200px; flex-wrap: wrap; }
+        .container {
+            background: #ffffff; flex: 2; min-width: 320px;
+            padding: 25px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+        }
+        .history-panel {
+            background: rgba(255, 255, 255, 0.9); flex: 1; min-width: 280px;
+            padding: 25px; border-radius: 20px; height: fit-content; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 { color: #1f4037; font-size: 22px; margin-bottom: 20px; text-align: center; }
+
+        /* Scanner Styling */
+        #scanner-ui { display: none; margin-bottom: 20px; border: 2px solid #1f4037; border-radius: 12px; overflow: hidden; background: #000; }
+        #reader { width: 100%; }
+        .cam-select { width: 100%; padding: 10px; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 14px; }
+
+        .btn { padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; width: 100%; margin-bottom: 10px; }
+        .scanner-btn { background: #ff512f; color: white; }
+        .search-btn { background: #1f4037; color: white; }
+        .clear-btn { background: #eee; color: #333; }
+
+        .input-group { margin-bottom: 15px; }
+        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; }
+
+        .chart-container { margin-top: 20px; display: none; background: #f9f9f9; padding: 15px; border-radius: 12px; height: 280px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        .summary-row td { background: #eef6f3; font-weight: bold; border-top: 2px solid #1f4037; }
+
+        .history-item { background: white; padding: 10px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; border-left: 4px solid #1f4037; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<div class="main-layout">
+    <div class="container">
+        <h1>Jewel Cost Finder</h1>
+
+        <button class="btn scanner-btn" id="toggleBtn" onclick="startScanner()">📷 Start Scanner</button>
+        <div id="scanner-ui">
+            <div id="reader"></div>
+            <select id="cameraSelection" class="cam-select" onchange="changeCamera(this.value)"></select>
+            <button class="btn clear-btn" onclick="stopScanner()">Close Camera</button>
+        </div>
+        
+        <div class="input-group">
+            <input type="text" id="jewelCode" placeholder="Enter Codes or Scan">
+        </div>
+        
+        <div style="display:flex; gap:10px;">
+            <button class="btn search-btn" onclick="getCost()">Analyze & Search</button>
+            <button class="btn clear-btn" onclick="clearSearch()">Clear</button>
+        </div>
+
+        <div id="result"></div>
+
+        <div id="chartWrapper" class="chart-container">
+            <canvas id="costChart"></canvas>
+        </div>
+    </div>
+
+    <div class="history-panel">
+        <h3>History</h3>
+        <hr style="margin:10px 0; opacity:0.1;">
+        <div id="historyList"></div>
+    </div>
+</div>
+
+<script>
+    let myChart = null;
+    let html5QrCode = null;
+
+    // --- UNIVERSAL SCANNER LOGIC ---
+    async function startScanner() {
+        const scannerUi = document.getElementById("scanner-ui");
+        const camSelect = document.getElementById("cameraSelection");
+        scannerUi.style.display = "block";
+        document.getElementById("toggleBtn").style.display = "none";
+
+        try {
+            const devices = await Html5Qrcode.getCameras();
+            if (devices && devices.length) {
+                // Fill camera dropdown
+                camSelect.innerHTML = devices.map(d => `<option value="${d.id}">${d.label}</option>`).join("");
+                
+                // Auto-start with back camera on mobile or default on desktop
+                const defaultId = devices.length > 1 ? devices[1].id : devices[0].id;
+                camSelect.value = defaultId;
+                initCamera(defaultId);
+            }
+        } catch (err) {
+            alert("Camera Error: Please ensure you are using HTTPS and have granted permissions.");
+        }
+    }
+
+    function initCamera(cameraId) {
+        if (html5QrCode) html5QrCode.stop();
+        html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start(
+            cameraId, 
+            { fps: 10, qrbox: { width: 250, height: 150 } },
+            (decodedText) => {
+                const input = document.getElementById("jewelCode");
+                input.value = input.value ? input.value + ", " + decodedText : decodedText;
+                // Optional: stopScanner(); getCost(); 
+            }
+        ).catch(err => console.error(err));
+    }
+
+    function changeCamera(id) {
+        initCamera(id);
+    }
+
+    function stopScanner() {
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                document.getElementById("scanner-ui").style.display = "none";
+                document.getElementById("toggleBtn").style.display = "block";
+            });
+        }
+    }
+
+    // --- DATA & CHART LOGIC ---
+    async function getCost() {
+        const inputStr = document.getElementById("jewelCode").value.trim();
+        if (!inputStr) return;
+        const codes = [...new Set(inputStr.split(",").map(c => c.trim()).filter(c => c !== ""))];
+        document.getElementById("result").innerHTML = "<p style='text-align:center;'>Fetching...</p>";
+
+        const results = await Promise.all(codes.map(code => 
+            fetch(`https://script.google.com/macros/s/AKfycbwiXUnfpNL6gbRwKwsF-ONTkP2V4YzpZSgBxRUTwmOde3wYvo1Cmh5rlhN7thbXsAXEig/exec?code=${encodeURIComponent(code)}`)
+            .then(r => r.json()).then(data => ({ code, cost: data.cost }))
+            .catch(() => ({ code, cost: "Error" }))
+        ));
+
+        displayData(results);
+        updateChart(results);
+        saveToHistory(codes, results);
+    }
+
+    function displayData(results) {
+        let total = 0;
+        let html = `<table><tr><th>Code</th><th>Price</th></tr>`;
+        results.forEach(item => {
+            const cost = parseFloat(item.cost) || 0;
+            total += cost;
+            html += `<tr><td>${item.code}</td><td>${cost > 0 ? '₹ '+cost.toLocaleString('en-IN') : item.cost}</td></tr>`;
+        });
+        html += `<tr class="summary-row"><td>Total</td><td>₹ ${total.toLocaleString('en-IN')}</td></tr></table>`;
+        document.getElementById("result").innerHTML = html;
+    }
+
+    function updateChart(results) {
+        const valid = results.filter(r => !isNaN(parseFloat(r.cost)));
+        if (!valid.length) return;
+        document.getElementById('chartWrapper').style.display = 'block';
+        if (myChart) myChart.destroy();
+        myChart = new Chart(document.getElementById('costChart'), {
+            type: 'bar',
+            data: {
+                labels: valid.map(r => r.code),
+                datasets: [{ data: valid.map(r => r.cost), backgroundColor: '#1f4037', borderRadius: 4 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+    }
+
+    function saveToHistory(codes, results) {
+        const hist = JSON.parse(localStorage.getItem("j_hist") || "[]");
+        const total = results.reduce((s, i) => s + (parseFloat(i.cost) || 0), 0);
+        hist.unshift({ time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), total, results, codes: codes.join(",") });
+        localStorage.setItem("j_hist", JSON.stringify(hist.slice(0, 5)));
+        renderHistory();
+    }
+
+    function renderHistory() {
+        const hist = JSON.parse(localStorage.getItem("j_hist") || "[]");
+        document.getElementById("historyList").innerHTML = hist.map((h, i) => `
+            <div class="history-item" onclick='restore(${i})'>
+                <strong>₹ ${h.total.toLocaleString('en-IN')}</strong> <small>(${h.time})</small>
+            </div>`).join("");
+    }
+
+    window.restore = (i) => {
+        const item = JSON.parse(localStorage.getItem("j_hist"))[i];
+        document.getElementById("jewelCode").value = item.codes;
+        displayData(item.results);
+        updateChart(item.results);
+    };
+
+    function clearSearch() {
+        document.getElementById("jewelCode").value = "";
+        document.getElementById("result").innerHTML = "";
+        document.getElementById("chartWrapper").style.display = "none";
+    }
+    renderHistory();
+</script>
+</body>
+</html>
