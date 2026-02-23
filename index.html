@@ -3,52 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jewel Cost Pro + Multi-Scanner</title>
+    <title>Jewel Cost Finder Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
+        /* Modern UI Styling */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #1f4037, #99f2c8);
-            display: flex; justify-content: center; align-items: flex-start;
-            min-height: 100vh; padding: 20px;
+            display: flex; justify-content: center; min-height: 100vh; padding: 20px;
         }
-        .main-layout { display: flex; gap: 20px; width: 100%; max-width: 1200px; flex-wrap: wrap; }
+        .main-layout { display: flex; gap: 20px; width: 100%; max-width: 1100px; flex-wrap: wrap; }
         .container {
-            background: #ffffff; flex: 2; min-width: 320px;
-            padding: 25px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            background: #fff; flex: 2; min-width: 320px; padding: 25px;
+            border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.1);
         }
         .history-panel {
-            background: rgba(255, 255, 255, 0.9); flex: 1; min-width: 280px;
-            padding: 25px; border-radius: 20px; height: fit-content; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.9); flex: 1; min-width: 280px;
+            padding: 20px; border-radius: 20px; height: fit-content;
         }
-        h1 { color: #1f4037; font-size: 22px; margin-bottom: 20px; text-align: center; }
 
-        /* Scanner Styling */
-        #scanner-ui { display: none; margin-bottom: 20px; border-radius: 12px; overflow: hidden; background: #000; position: relative; }
-        #reader { width: 100%; }
-        
-        /* Visual Indicator for Successful Scan */
-        #scan-indicator {
+        /* Scanner Box */
+        #scanner-container { display: none; margin-bottom: 20px; border-radius: 15px; overflow: hidden; border: 3px solid #1f4037; position: relative; }
+        #reader { width: 100%; background: #000; }
+        #scan-flash {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(46, 204, 113, 0.5); display: none; z-index: 10;
-            pointer-events: none; justify-content: center; align-items: center;
-            color: white; font-weight: bold; font-size: 24px;
+            background: rgba(46, 204, 113, 0.6); display: none; z-index: 10;
+            justify-content: center; align-items: center; color: white; font-weight: bold;
         }
 
-        .btn { padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; width: 100%; margin-bottom: 10px; }
-        .scanner-btn { background: #ff512f; color: white; }
+        /* Buttons & Inputs */
+        .btn { padding: 14px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 10px; transition: 0.2s; }
+        .scan-btn { background: #ff512f; color: white; }
         .search-btn { background: #1f4037; color: white; }
         .clear-btn { background: #eee; color: #333; }
+        input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 15px; font-size: 16px; }
 
-        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; margin-bottom: 15px; }
-
-        .chart-container { margin-top: 20px; display: none; background: #f9f9f9; padding: 15px; border-radius: 12px; height: 280px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
-        .summary-row td { background: #eef6f3; font-weight: bold; border-top: 2px solid #1f4037; }
-        .history-item { background: white; padding: 10px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; border-left: 4px solid #1f4037; font-size: 13px; }
+        /* Results */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        .summary-row { background: #eef6f3; font-weight: bold; color: #1f4037; }
+        .chart-box { margin-top: 30px; height: 300px; display: none; }
     </style>
 </head>
 <body>
@@ -57,187 +53,151 @@
     <div class="container">
         <h1>Jewel Cost Finder</h1>
 
-        <button class="btn scanner-btn" id="toggleBtn" onclick="startScanner()">📷 Open Scanner</button>
+        <button class="btn scan-btn" id="camBtn" onclick="toggleScanner()">📷 Open Barcode Scanner</button>
         
-        <div id="scanner-ui">
-            <div id="scan-indicator">SUCCESS!</div>
+        <div id="scanner-container">
+            <div id="scan-flash">COPIED!</div>
             <div id="reader"></div>
-            <div style="padding: 10px; background: #fff;">
-                <select id="cameraSelection" style="width:100%; padding:8px; margin-bottom:10px;" onchange="changeCamera(this.value)"></select>
-                <button class="btn clear-btn" onclick="stopScanner()">Close Camera</button>
+            <div style="background: #fff; padding: 10px; text-align: center;">
+                <select id="camList" style="padding: 5px; margin-bottom: 5px; width: 80%;" onchange="restartWithCam(this.value)"></select>
+                <button class="btn clear-btn" style="margin:0; width: auto;" onclick="toggleScanner()">Close</button>
             </div>
         </div>
-        
-        <input type="text" id="jewelCode" placeholder="Scanned codes will appear here...">
+
+        <input type="text" id="jewelCode" placeholder="Enter or Scan Codes (comma separated)">
         
         <div style="display:flex; gap:10px;">
-            <button class="btn search-btn" onclick="getCost()">Analyze & Search</button>
-            <button class="btn clear-btn" onclick="clearSearch()">Clear</button>
+            <button class="btn search-btn" onclick="fetchPrices()">Search & Analyze</button>
+            <button class="btn clear-btn" onclick="resetAll()">Clear</button>
         </div>
 
-        <div id="result"></div>
-        <div id="chartWrapper" class="chart-container"><canvas id="costChart"></canvas></div>
+        <div id="table-result"></div>
+        <div id="chart-result" class="chart-box"><canvas id="myChart"></canvas></div>
     </div>
 
     <div class="history-panel">
-        <h3>History</h3>
-        <hr style="margin:10px 0; opacity:0.1;">
-        <div id="historyList"></div>
+        <h3>Recent Searches</h3>
+        <div id="histList" style="margin-top: 15px;"></div>
     </div>
 </div>
 
 <script>
-    let myChart = null;
-    let html5QrCode = null;
-    let isScanningPaused = false;
+    let scanner = null;
+    let priceChart = null;
+    let isPaused = false;
     const beep = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
 
-    async function startScanner() {
-        const scannerUi = document.getElementById("scanner-ui");
-        const camSelect = document.getElementById("cameraSelection");
-        
-        // Ensure old instances are cleaned up
-        if (html5QrCode) {
-            await html5QrCode.stop().catch(() => {});
-            html5QrCode = null;
+    // --- SCANNER LOGIC ---
+    async function toggleScanner() {
+        const container = document.getElementById("scanner-container");
+        if (scanner) {
+            await scanner.stop();
+            scanner = null;
+            container.style.display = "none";
+            document.getElementById("camBtn").innerText = "📷 Open Barcode Scanner";
+        } else {
+            container.style.display = "block";
+            document.getElementById("camBtn").innerText = "🛑 Stop Scanner";
+            startCamera();
         }
+    }
 
-        scannerUi.style.display = "block";
-        document.getElementById("toggleBtn").style.display = "none";
-
+    async function startCamera() {
         try {
             const devices = await Html5Qrcode.getCameras();
-            if (devices && devices.length) {
-                camSelect.innerHTML = devices.map(d => `<option value="${d.id}">${d.label}</option>`).join("");
-                const backCam = devices.find(d => d.label.toLowerCase().includes('back')) || devices[0];
-                camSelect.value = backCam.id;
-                initCamera(backCam.id);
-            }
-        } catch (err) {
-            alert("Camera Error: Please grant permissions and use HTTPS.");
-        }
+            const select = document.getElementById("camList");
+            select.innerHTML = devices.map(d => `<option value="${d.id}">${d.label}</option>`).join("");
+            
+            // Default to back camera on mobile
+            const bestCam = devices.find(d => d.label.toLowerCase().includes('back')) || devices[0];
+            select.value = bestCam.id;
+            runScanner(bestCam.id);
+        } catch (e) { alert("Camera Error: Check HTTPS/Permissions"); }
     }
 
-    function initCamera(cameraId) {
-        if (html5QrCode) html5QrCode.stop().then(() => startCam(cameraId));
-        else startCam(cameraId);
-    }
-
-    function startCam(id) {
-        html5QrCode = new Html5Qrcode("reader");
-        html5QrCode.start(id, { fps: 10, qrbox: { width: 250, height: 150 } }, 
-        (decodedText) => {
-            if (isScanningPaused) return; // Prevent multiple scans of same item
-
-            // 1. Provide Feedback
-            isScanningPaused = true;
+    function runScanner(id) {
+        if(scanner) scanner.stop();
+        scanner = new Html5Qrcode("reader");
+        scanner.start(id, { fps: 10, qrbox: {width: 250, height: 150} }, (text) => {
+            if (isPaused) return;
+            
+            // Feedback
+            isPaused = true;
             beep.play();
-            showIndicator();
-
-            // 2. Add Code
-            const input = document.getElementById("jewelCode");
-            let currentCodes = input.value.split(",").map(c => c.trim()).filter(c => c !== "");
-            if (!currentCodes.includes(decodedText)) {
-                currentCodes.push(decodedText);
-                input.value = currentCodes.join(", ");
+            document.getElementById("scan-flash").style.display = "flex";
+            
+            // Add to input
+            const box = document.getElementById("jewelCode");
+            let items = box.value.split(",").map(i => i.trim()).filter(i => i !== "");
+            if(!items.includes(text)) {
+                items.push(text);
+                box.value = items.join(", ");
             }
 
-            // 3. Pause for 2 seconds then allow next scan
-            setTimeout(() => { isScanningPaused = false; }, 2000);
-        }).catch(err => console.error(err));
+            // Cooldown for 2 seconds
+            setTimeout(() => {
+                isPaused = false;
+                document.getElementById("scan-flash").style.display = "none";
+            }, 2000);
+        });
     }
 
-    function showIndicator() {
-        const ind = document.getElementById("scan-indicator");
-        ind.style.display = "flex";
-        setTimeout(() => { ind.style.display = "none"; }, 500);
-    }
+    function restartWithCam(id) { runScanner(id); }
 
-    function changeCamera(id) { initCamera(id); }
+    // --- DATA LOGIC ---
+    async function fetchPrices() {
+        const val = document.getElementById("jewelCode").value;
+        if (!val) return;
+        const codes = [...new Set(val.split(",").map(c => c.trim()).filter(c => c !== ""))];
+        
+        document.getElementById("table-result").innerHTML = "<p style='padding:20px; text-align:center;'>Searching...</p>";
 
-    async function stopScanner() {
-        if (html5QrCode) {
-            await html5QrCode.stop();
-            html5QrCode = null;
-        }
-        document.getElementById("scanner-ui").style.display = "none";
-        document.getElementById("toggleBtn").style.display = "block";
-    }
-
-    async function getCost() {
-        const inputStr = document.getElementById("jewelCode").value.trim();
-        if (!inputStr) return;
-        const codes = [...new Set(inputStr.split(",").map(c => c.trim()).filter(c => c !== ""))];
-        document.getElementById("result").innerHTML = "<p style='text-align:center;'>Fetching...</p>";
-
-        const results = await Promise.all(codes.map(code => 
-            fetch(`https://script.google.com/macros/s/AKfycbwiXUnfpNL6gbRwKwsF-ONTkP2V4YzpZSgBxRUTwmOde3wYvo1Cmh5rlhN7thbXsAXEig/exec?code=${encodeURIComponent(code)}`)
-            .then(r => r.json()).then(data => ({ code, cost: data.cost }))
-            .catch(() => ({ code, cost: "Error" }))
+        const results = await Promise.all(codes.map(c => 
+            fetch(`https://script.google.com/macros/s/AKfycbwiXUnfpNL6gbRwKwsF-ONTkP2V4YzpZSgBxRUTwmOde3wYvo1Cmh5rlhN7thbXsAXEig/exec?code=${encodeURIComponent(c)}`)
+            .then(r => r.json())
+            .then(data => ({ code: c, cost: data.cost }))
+            .catch(() => ({ code: c, cost: "Error" }))
         ));
 
-        displayData(results);
-        updateChart(results);
-        saveToHistory(codes, results);
+        renderOutput(results);
     }
 
-    function displayData(results) {
+    function renderOutput(data) {
         let total = 0;
-        let html = `<table><tr><th>Code</th><th>Price</th></tr>`;
-        results.forEach(item => {
-            const cost = parseFloat(item.cost) || 0;
-            total += cost;
-            html += `<tr><td><strong>${item.code}</strong></td><td>${cost > 0 ? '₹ '+cost.toLocaleString('en-IN') : item.cost}</td></tr>`;
+        let table = `<table><tr><th>Jewel Code</th><th>Price</th></tr>`;
+        
+        data.forEach(item => {
+            const price = parseFloat(item.cost) || 0;
+            total += price;
+            table += `<tr><td><strong>${item.code}</strong></td><td>${price > 0 ? '₹ '+price.toLocaleString('en-IN') : item.cost}</td></tr>`;
         });
-        html += `<tr class="summary-row"><td>Total</td><td>₹ ${total.toLocaleString('en-IN')}</td></tr></table>`;
-        document.getElementById("result").innerHTML = html;
+        
+        table += `<tr class="summary-row"><td>TOTAL</td><td>₹ ${total.toLocaleString('en-IN')}</td></tr></table>`;
+        document.getElementById("table-result").innerHTML = table;
+
+        // Update Chart
+        const valid = data.filter(d => !isNaN(parseFloat(d.cost)));
+        if (valid.length > 0) {
+            document.getElementById("chart-result").style.display = "block";
+            if (priceChart) priceChart.destroy();
+            priceChart = new Chart(document.getElementById("myChart"), {
+                type: 'bar',
+                data: {
+                    labels: valid.map(v => v.code),
+                    datasets: [{ label: 'Price (₹)', data: valid.map(v => v.cost), backgroundColor: '#1f4037' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
     }
 
-    function updateChart(results) {
-        const valid = results.filter(r => !isNaN(parseFloat(r.cost)));
-        if (!valid.length) return;
-        document.getElementById('chartWrapper').style.display = 'block';
-        if (myChart) myChart.destroy();
-        myChart = new Chart(document.getElementById('costChart'), {
-            type: 'bar',
-            data: {
-                labels: valid.map(r => r.code),
-                datasets: [{ data: valid.map(r => r.cost), backgroundColor: '#1f4037' }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-        });
-    }
-
-    function saveToHistory(codes, results) {
-        const hist = JSON.parse(localStorage.getItem("j_hist") || "[]");
-        const total = results.reduce((s, i) => s + (parseFloat(i.cost) || 0), 0);
-        hist.unshift({ time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), total, results, codes: codes.join(",") });
-        localStorage.setItem("j_hist", JSON.stringify(hist.slice(0, 5)));
-        renderHistory();
-    }
-
-    function renderHistory() {
-        const hist = JSON.parse(localStorage.getItem("j_hist") || "[]");
-        document.getElementById("historyList").innerHTML = hist.map((h, i) => `
-            <div class="history-item" onclick='restore(${i})'>
-                <strong>₹ ${h.total.toLocaleString('en-IN')}</strong> <small>(${h.time})</small>
-            </div>`).join("");
-    }
-
-    window.restore = (i) => {
-        const item = JSON.parse(localStorage.getItem("j_hist"))[i];
-        document.getElementById("jewelCode").value = item.codes;
-        displayData(item.results);
-        updateChart(item.results);
-    };
-
-    function clearSearch() {
+    function resetAll() {
         document.getElementById("jewelCode").value = "";
-        document.getElementById("result").innerHTML = "";
-        document.getElementById("chartWrapper").style.display = "none";
-        if(myChart) myChart.destroy();
+        document.getElementById("table-result").innerHTML = "";
+        document.getElementById("chart-result").style.display = "none";
+        if(priceChart) priceChart.destroy();
     }
-    renderHistory();
 </script>
+
 </body>
 </html>
