@@ -19,38 +19,55 @@
             border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); 
         }
         
-        /* Heading Center Align */
-        h1 { 
-            text-align: center; 
-            margin-bottom: 25px; 
-            color: #1f4037; 
-            font-size: 2.2rem;
-        }
+        h1 { text-align: center; margin-bottom: 25px; color: #1f4037; font-size: 2.2rem; }
 
-        .history-panel { 
-            background: rgba(255,255,255,0.9); flex: 1; min-width: 280px; 
-            padding: 20px; border-radius: 20px; height: fit-content; 
+        /* Button Animation Effects */
+        .btn { 
+            padding: 14px; border-radius: 10px; border: none; font-weight: 600; 
+            cursor: pointer; width: 100%; margin-bottom: 10px; transition: all 0.2s ease;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
         }
-        #scanner-container { display: none; margin-bottom: 20px; border-radius: 15px; overflow: hidden; border: 3px solid #1f4037; position: relative; }
-        #reader { width: 100%; background: #000; }
-        #scan-flash {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(46, 204, 113, 0.6); display: none; z-index: 10;
-            justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 20px;
-        }
-        .btn { padding: 14px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 10px; transition: 0.2s; }
+        .btn:active { transform: scale(0.96); } /* Click effect */
+
         .scan-btn { background: #ff512f; color: white; }
-        .search-btn { background: #1f4037; color: white; }
+        .search-btn { background: #1f4037; color: white; position: relative; }
+        .search-btn:hover { background: #2c5e51; }
         .clear-btn { background: #eee; color: #333; }
-        input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 15px; font-size: 16px; outline: none; }
-        input:focus { border-color: #1f4037; box-shadow: 0 0 5px rgba(31,64,55,0.2); }
-        .table-responsive { overflow-x: auto; margin-top: 20px; }
+        
+        input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 15px; font-size: 16px; outline: none; transition: 0.3s; }
+        input:focus { border-color: #1f4037; box-shadow: 0 0 8px rgba(31,64,55,0.2); }
+
+        /* Loading Spinner */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1f4037;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin: 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Table Animation */
+        .table-responsive { 
+            overflow-x: auto; margin-top: 20px; 
+            opacity: 0; transform: translateY(10px); transition: all 0.4s ease;
+        }
+        .table-visible { opacity: 1; transform: translateY(0); }
+
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
         th { background-color: #f8f9fa; color: #1f4037; font-weight: bold; }
-        .summary-row { background: #eef6f3; font-weight: bold; color: #1f4037; }
+        
+        .history-panel { background: rgba(255,255,255,0.9); flex: 1; min-width: 280px; padding: 20px; border-radius: 20px; height: fit-content; }
         .chart-box { margin-top: 30px; height: 350px; display: none; background: #fdfdfd; padding: 15px; border-radius: 15px; border: 1px solid #eee; }
-        .history-item { background: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #1f4037; cursor: pointer; font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .history-item { background: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #1f4037; cursor: pointer; font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s; }
+        .history-item:hover { transform: translateX(5px); }
+
+        #scanner-container { display: none; margin-bottom: 20px; border-radius: 15px; overflow: hidden; border: 3px solid #1f4037; position: relative; }
+        #reader { width: 100%; background: #000; }
     </style>
 </head>
 <body>
@@ -62,7 +79,6 @@
         <button class="btn scan-btn" id="camBtn" onclick="toggleScanner()">📷 Open Barcode Scanner</button>
         
         <div id="scanner-container">
-            <div id="scan-flash">SCANNED!</div>
             <div id="reader"></div>
             <div style="background: #fff; padding: 10px; text-align: center;">
                 <select id="camList" style="padding: 5px; margin-bottom: 5px; width: 80%;" onchange="restartWithCam(this.value)"></select>
@@ -70,13 +86,16 @@
             </div>
         </div>
 
-        <input type="text" id="jewelCode" placeholder="Enter Jewel Codes & Press Enter (e.g. 19236, 18296)">
+        <input type="text" id="jewelCode" placeholder="Enter Jewel Codes & Press Enter">
         
         <div style="display:flex; gap:10px;">
-            <button class="btn search-btn" onclick="fetchPrices()">Analyze & Search</button>
+            <button class="btn search-btn" id="searchBtn" onclick="fetchPrices()">
+                <span>Analyze & Search</span>
+            </button>
             <button class="btn clear-btn" onclick="resetAll()">Clear All</button>
         </div>
 
+        <div id="loader" class="loader"></div>
         <div class="table-responsive" id="table-result"></div>
         
         <div id="chart-result" class="chart-box">
@@ -94,15 +113,11 @@
 <script>
     let scanner = null;
     let priceChart = null;
-    let isPaused = false;
     const beep = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
 
-    // "Enter" Key functionality
-    document.getElementById("jewelCode").addEventListener("keypress", function(event) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            fetchPrices();
-        }
+    // Enter Key Trigger
+    document.getElementById("jewelCode").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") fetchPrices();
     });
 
     async function toggleScanner() {
@@ -123,7 +138,6 @@
             const select = document.getElementById("camList");
             select.innerHTML = devices.map(d => `<option value="${d.id}">${d.label}</option>`).join("");
             const bestCam = devices.find(d => d.label.toLowerCase().includes('back')) || devices[0];
-            select.value = bestCam.id;
             runScanner(bestCam.id);
         } catch (e) { alert("Camera Error"); }
     }
@@ -131,51 +145,62 @@
     function runScanner(id) {
         if(scanner) scanner.stop();
         scanner = new Html5Qrcode("reader");
-        scanner.start(id, { fps: 10, qrbox: {width: 250, height: 150} }, (text) => {
-            if (isPaused) return;
-            isPaused = true;
+        scanner.start(id, { fps: 10, qrbox: 250 }, (text) => {
             beep.play();
-            document.getElementById("scan-flash").style.display = "flex";
             const box = document.getElementById("jewelCode");
-            let items = box.value.split(",").map(i => i.trim()).filter(i => i !== "");
-            if(!items.includes(text)) { items.push(text); box.value = items.join(", "); }
-            setTimeout(() => { isPaused = false; document.getElementById("scan-flash").style.display = "none"; }, 1500);
+            box.value = box.value ? box.value + ", " + text : text;
         });
     }
-
-    function restartWithCam(id) { runScanner(id); }
 
     async function fetchPrices() {
         const val = document.getElementById("jewelCode").value;
         if (!val) return;
+
+        // Visual Feedback Start
+        const loader = document.getElementById("loader");
+        const tableArea = document.getElementById("table-result");
+        const searchBtn = document.getElementById("searchBtn");
+        
+        loader.style.display = "block";
+        tableArea.classList.remove("table-visible");
+        searchBtn.style.opacity = "0.7";
+        searchBtn.innerText = "Searching...";
+
         await stopScanner();
         const codes = [...new Set(val.split(",").map(c => c.trim()).filter(c => c !== ""))];
-        document.getElementById("table-result").innerHTML = "<p style='padding:20px; text-align:center;'>Searching...</p>";
 
-        const results = await Promise.all(codes.map(c => 
-            fetch(`https://script.google.com/macros/s/AKfycby4_4M_Me4ac56IyP_ByQdcW_9sCyNgKQGW1JFP5IS9INr7nwTzx_ak900wy5a6__tUCQ/exec?code=${encodeURIComponent(c)}`)
-            .then(r => r.json())
-            .catch(() => ({ error: "Error", jewelCode: c }))
-        ));
-        renderOutput(results);
+        try {
+            const results = await Promise.all(codes.map(c => 
+                fetch(`https://script.google.com/macros/s/AKfycby4_4M_Me4ac56IyP_ByQdcW_9sCyNgKQGW1JFP5IS9INr7nwTzx_ak900wy5a6__tUCQ/exec?code=${encodeURIComponent(c)}`)
+                .then(r => r.json())
+                .catch(() => ({ error: "Error", jewelCode: c }))
+            ));
+            renderOutput(results);
+        } finally {
+            // Visual Feedback End
+            loader.style.display = "none";
+            tableArea.classList.add("table-visible");
+            searchBtn.style.opacity = "1";
+            searchBtn.innerText = "Analyze & Search";
+        }
     }
 
     function renderOutput(data) {
         let totalOriginal = 0, totalUpdated = 0;
-        let table = `<table><tr><th>Code</th><th>Style</th><th>Original Cost</th><th>Updated Cost</th><th>Wt.</th></tr>`;
+        let table = `<table><tr><th>Code</th><th>Style</th><th>Original</th><th>Updated</th><th>Wt.</th></tr>`;
 
         data.forEach(item => {
-            if (item.error || item.costPrice === "Not Found" || !item.jewelCode) {
-                table += `<tr><td><strong>${item.jewelCode || 'N/A'}</strong></td><td colspan="4" style="color:red; text-align:center;">Not Found</td></tr>`;
+            if (item.error || item.costPrice === "Not Found") {
+                table += `<tr><td><strong>${item.jewelCode}</strong></td><td colspan="4" style="color:red; text-align:center;">Not Found</td></tr>`;
             } else {
-                const costVal = parseFloat(item.costPrice) || 0;
-                const updatedVal = parseFloat(item.updatedCostPrice) || 0;
-                totalOriginal += costVal; totalUpdated += updatedVal;
-                table += `<tr><td><strong>${item.jewelCode}</strong></td><td>${item.styleCode || '-'}</td><td>₹ ${costVal.toLocaleString('en-IN')}</td><td>₹ ${updatedVal.toLocaleString('en-IN')}</td><td>${item.pureWt || '-'}g</td></tr>`;
+                const c = parseFloat(item.costPrice) || 0;
+                const u = parseFloat(item.updatedCostPrice) || 0;
+                totalOriginal += c; totalUpdated += u;
+                table += `<tr><td><strong>${item.jewelCode}</strong></td><td>${item.styleCode || '-'}</td><td>₹${c.toLocaleString('en-IN')}</td><td>₹${u.toLocaleString('en-IN')}</td><td>${item.pureWt}g</td></tr>`;
             }
         });
 
-        table += `<tr class="summary-row"><td colspan="2">TOTAL</td><td>₹ ${totalOriginal.toLocaleString('en-IN')}</td><td>₹ ${totalUpdated.toLocaleString('en-IN')}</td><td></td></tr></table>`;
+        table += `<tr style="background:#eef6f3; font-weight:bold;"><td colspan="2">TOTAL</td><td>₹${totalOriginal.toLocaleString('en-IN')}</td><td>₹${totalUpdated.toLocaleString('en-IN')}</td><td></td></tr></table>`;
         document.getElementById("table-result").innerHTML = table;
         
         saveHistory(totalUpdated, data.map(d => d.jewelCode).join(", "));
@@ -183,37 +208,20 @@
     }
 
     function updateChart(data) {
-        const valid = data.filter(d => d.jewelCode && !d.error && d.costPrice !== "Not Found");
+        const valid = data.filter(d => !d.error && d.costPrice !== "Not Found");
         if (valid.length > 0) {
             document.getElementById("chart-result").style.display = "block";
             if (priceChart) priceChart.destroy();
-            
             priceChart = new Chart(document.getElementById("myChart"), {
                 type: 'bar',
                 data: {
                     labels: valid.map(v => v.jewelCode),
                     datasets: [
-                        {
-                            label: 'Original Cost (₹)',
-                            data: valid.map(v => v.costPrice),
-                            backgroundColor: '#ff512f',
-                            borderRadius: 5
-                        },
-                        {
-                            label: 'Updated Cost (₹)',
-                            data: valid.map(v => v.updatedCostPrice),
-                            backgroundColor: '#1f4037',
-                            borderRadius: 5
-                        }
+                        { label: 'Original Cost', data: valid.map(v => v.costPrice), backgroundColor: '#ff512f' },
+                        { label: 'Updated Cost', data: valid.map(v => v.updatedCostPrice), backgroundColor: '#1f4037' }
                     ]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true, ticks: { callback: value => '₹' + value.toLocaleString('en-IN') } }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false }
             });
         }
     }
@@ -227,12 +235,13 @@
 
     function renderHistoryList() {
         const hist = JSON.parse(localStorage.getItem("jewel_hist") || "[]");
-        document.getElementById("histList").innerHTML = hist.map(h => `<div class="history-item"><strong>₹ ${h.total.toLocaleString('en-IN')}</strong><br><small>${h.time} - ${h.codes.substring(0,25)}...</small></div>`).join("");
+        document.getElementById("histList").innerHTML = hist.map(h => `<div class="history-item"><strong>₹${h.total.toLocaleString('en-IN')}</strong><br><small>${h.time} - ${h.codes.substring(0,20)}...</small></div>`).join("");
     }
 
     function resetAll() {
         document.getElementById("jewelCode").value = "";
         document.getElementById("table-result").innerHTML = "";
+        document.getElementById("table-result").classList.remove("table-visible");
         document.getElementById("chart-result").style.display = "none";
         if(priceChart) priceChart.destroy();
     }
