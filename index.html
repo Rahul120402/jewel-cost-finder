@@ -7,16 +7,32 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
+        /* General Styles */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
             font-family: 'Segoe UI', sans-serif; 
             background: linear-gradient(135deg, #1f4037, #99f2c8); 
             display: flex; justify-content: center; min-height: 100vh; padding: 20px; 
         }
-        .main-layout { display: flex; gap: 20px; width: 100%; max-width: 1200px; flex-wrap: wrap; }
+
+        /* Layout Fix: Isko change kiya hai taaki height fixed na dikhe */
+        .main-layout { 
+            display: flex; 
+            gap: 20px; 
+            width: 100%; 
+            max-width: 1200px; 
+            flex-wrap: wrap; 
+            align-items: flex-start; /* Items ko top se align karega */
+        }
+
         .container { 
-            background: #fff; flex: 3; min-width: 350px; padding: 25px; 
-            border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); 
+            background: #fff; 
+            flex: 3; 
+            min-width: 350px; 
+            padding: 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            height: fit-content; /* Sirf utni hi height lega jitni zarurat hai */
         }
         
         h1 { text-align: center; margin-bottom: 25px; color: #1f4037; font-size: 2.2rem; }
@@ -36,7 +52,7 @@
         input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 15px; font-size: 16px; outline: none; transition: 0.3s; }
         input:focus { border-color: #1f4037; box-shadow: 0 0 8px rgba(31,64,55,0.2); }
 
-        /* Scanning Visual Indicator */
+        /* Scanner */
         #scanner-container { display: none; margin-bottom: 20px; border-radius: 15px; overflow: hidden; border: 3px solid #1f4037; position: relative; }
         #scan-status {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -53,8 +69,15 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .table-responsive { overflow-x: auto; margin-top: 20px; opacity: 0; transform: translateY(10px); transition: all 0.4s ease; }
-        .table-visible { opacity: 1; transform: translateY(0); }
+        /* Results Display */
+        .table-responsive { 
+            overflow-x: auto; 
+            margin-top: 20px; 
+            display: none; /* Pehle se hide rahega taaki space na le */
+        }
+        .table-visible { display: block; opacity: 1; transform: translateY(0); animation: fadeIn 0.4s; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
@@ -62,7 +85,13 @@
         
         .history-panel { background: rgba(255,255,255,0.9); flex: 1; min-width: 280px; padding: 20px; border-radius: 20px; height: fit-content; }
         .chart-box { margin-top: 30px; height: 350px; display: none; background: #fdfdfd; padding: 15px; border-radius: 15px; border: 1px solid #eee; }
-        .history-item { background: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #1f4037; cursor: pointer; font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        .history-item { 
+            background: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; 
+            border-left: 5px solid #1f4037; cursor: pointer; font-size: 13px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s;
+        }
+        .history-item:hover { background: #f0fdf4; transform: translateX(5px); }
 
         #reader { width: 100%; background: #000; }
     </style>
@@ -111,7 +140,7 @@
 <script>
     let scanner = null;
     let priceChart = null;
-    let isScanningPaused = false; // Flag to prevent multiple rapid scans
+    let isScanningPaused = false; 
     const beep = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
 
     document.getElementById("jewelCode").addEventListener("keypress", (e) => {
@@ -144,30 +173,18 @@
         if(scanner) scanner.stop();
         scanner = new Html5Qrcode("reader");
         scanner.start(id, { fps: 10, qrbox: 250 }, (text) => {
-            // Check if scanning is allowed
             if (isScanningPaused) return;
-
-            // Start Pause logic
             isScanningPaused = true;
             beep.play();
-            
-            // Visual Feedback: Show "SCANNED" message
             const statusIndicator = document.getElementById("scan-status");
             statusIndicator.style.display = "flex";
-
-            // Add text to input
             const box = document.getElementById("jewelCode");
             let currentVal = box.value.trim();
             if (currentVal) {
-                // Avoid adding same code twice in one scan burst
-                if (!currentVal.includes(text)) {
+                if (!currentVal.split(',').map(s => s.trim()).includes(text)) {
                     box.value = currentVal + ", " + text;
                 }
-            } else {
-                box.value = text;
-            }
-
-            // Wait 2 seconds before allowing next scan
+            } else { box.value = text; }
             setTimeout(() => {
                 isScanningPaused = false;
                 statusIndicator.style.display = "none";
@@ -184,8 +201,7 @@
         const searchBtn = document.getElementById("searchBtn");
         
         loader.style.display = "block";
-        tableArea.classList.remove("table-visible");
-        searchBtn.style.opacity = "0.7";
+        tableArea.style.display = "none"; // Hide table while searching
         searchBtn.innerText = "Searching...";
 
         await stopScanner();
@@ -200,13 +216,12 @@
             renderOutput(results);
         } finally {
             loader.style.display = "none";
-            tableArea.classList.add("table-visible");
-            searchBtn.style.opacity = "1";
             searchBtn.innerText = "Analyze & Search";
         }
     }
 
     function renderOutput(data) {
+        const tableArea = document.getElementById("table-result");
         let totalOriginal = 0, totalUpdated = 0;
         let table = `<table><tr><th>Code</th><th>Style</th><th>Original</th><th>Updated</th><th>Wt.</th></tr>`;
 
@@ -222,7 +237,9 @@
         });
 
         table += `<tr style="background:#eef6f3; font-weight:bold;"><td colspan="2">TOTAL</td><td>₹${totalOriginal.toLocaleString('en-IN')}</td><td>₹${totalUpdated.toLocaleString('en-IN')}</td><td></td></tr></table>`;
-        document.getElementById("table-result").innerHTML = table;
+        tableArea.innerHTML = table;
+        tableArea.style.display = "block"; // Show table now
+        tableArea.classList.add("table-visible");
         
         saveHistory(totalUpdated, data.map(d => d.jewelCode).join(", "));
         updateChart(data);
@@ -248,7 +265,9 @@
     }
 
     function saveHistory(total, codes) {
-        const hist = JSON.parse(localStorage.getItem("jewel_hist") || "[]");
+        if (total === 0) return;
+        let hist = JSON.parse(localStorage.getItem("jewel_hist") || "[]");
+        hist = hist.filter(item => item.codes !== codes);
         hist.unshift({ time: new Date().toLocaleTimeString(), total, codes });
         localStorage.setItem("jewel_hist", JSON.stringify(hist.slice(0, 5)));
         renderHistoryList();
@@ -256,17 +275,28 @@
 
     function renderHistoryList() {
         const hist = JSON.parse(localStorage.getItem("jewel_hist") || "[]");
-        document.getElementById("histList").innerHTML = hist.map(h => `<div class="history-item"><strong>₹${h.total.toLocaleString('en-IN')}</strong><br><small>${h.time} - ${h.codes.substring(0,20)}...</small></div>`).join("");
+        document.getElementById("histList").innerHTML = hist.map(h => `
+            <div class="history-item" onclick="loadHistory('${h.codes}')">
+                <strong>₹${h.total.toLocaleString('en-IN')}</strong><br>
+                <small>${h.time} - ${h.codes.substring(0,30)}...</small>
+            </div>`).join("");
+    }
+
+    function loadHistory(codes) {
+        document.getElementById("jewelCode").value = codes;
+        fetchPrices();
     }
 
     function resetAll() {
         document.getElementById("jewelCode").value = "";
-        document.getElementById("table-result").innerHTML = "";
-        document.getElementById("table-result").classList.remove("table-visible");
+        const tableArea = document.getElementById("table-result");
+        tableArea.innerHTML = "";
+        tableArea.style.display = "none";
         document.getElementById("chart-result").style.display = "none";
         if(priceChart) priceChart.destroy();
     }
-    renderHistoryList();
+    
+    window.onload = renderHistoryList;
 </script>
 </body>
 </html>
