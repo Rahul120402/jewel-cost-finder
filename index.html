@@ -8,21 +8,29 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #1f4037, #99f2c8);
-            display: flex; justify-content: center; min-height: 100vh; padding: 20px;
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #1f4037, #99f2c8); 
+            display: flex; justify-content: center; min-height: 100vh; padding: 20px; 
         }
-        .main-layout { display: flex; gap: 20px; width: 100%; max-width: 1100px; flex-wrap: wrap; }
-        .container {
-            background: #fff; flex: 2; min-width: 320px; padding: 25px;
-            border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+        .main-layout { display: flex; gap: 20px; width: 100%; max-width: 1200px; flex-wrap: wrap; }
+        .container { 
+            background: #fff; flex: 3; min-width: 350px; padding: 25px; 
+            border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); 
         }
-        .history-panel {
-            background: rgba(255,255,255,0.9); flex: 1; min-width: 280px;
-            padding: 20px; border-radius: 20px; height: fit-content;
+        
+        /* Heading Center Align */
+        h1 { 
+            text-align: center; 
+            margin-bottom: 25px; 
+            color: #1f4037; 
+            font-size: 2.2rem;
         }
 
+        .history-panel { 
+            background: rgba(255,255,255,0.9); flex: 1; min-width: 280px; 
+            padding: 20px; border-radius: 20px; height: fit-content; 
+        }
         #scanner-container { display: none; margin-bottom: 20px; border-radius: 15px; overflow: hidden; border: 3px solid #1f4037; position: relative; }
         #reader { width: 100%; background: #000; }
         #scan-flash {
@@ -30,19 +38,19 @@
             background: rgba(46, 204, 113, 0.6); display: none; z-index: 10;
             justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 20px;
         }
-
         .btn { padding: 14px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 10px; transition: 0.2s; }
         .scan-btn { background: #ff512f; color: white; }
         .search-btn { background: #1f4037; color: white; }
         .clear-btn { background: #eee; color: #333; }
-        input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 15px; font-size: 16px; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 15px; font-size: 16px; outline: none; }
+        input:focus { border-color: #1f4037; box-shadow: 0 0 5px rgba(31,64,55,0.2); }
+        .table-responsive { overflow-x: auto; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; color: #1f4037; font-weight: bold; }
         .summary-row { background: #eef6f3; font-weight: bold; color: #1f4037; }
-        .chart-box { margin-top: 30px; height: 300px; display: none; }
-        
-        .history-item { background: white; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #1f4037; cursor: pointer; font-size: 13px; }
+        .chart-box { margin-top: 30px; height: 350px; display: none; background: #fdfdfd; padding: 15px; border-radius: 15px; border: 1px solid #eee; }
+        .history-item { background: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #1f4037; cursor: pointer; font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
@@ -62,19 +70,23 @@
             </div>
         </div>
 
-        <input type="text" id="jewelCode" placeholder="Scanned codes will appear here...">
+        <input type="text" id="jewelCode" placeholder="Enter Jewel Codes & Press Enter (e.g. 19236, 18296)">
         
         <div style="display:flex; gap:10px;">
             <button class="btn search-btn" onclick="fetchPrices()">Analyze & Search</button>
             <button class="btn clear-btn" onclick="resetAll()">Clear All</button>
         </div>
 
-        <div id="table-result"></div>
-        <div id="chart-result" class="chart-box"><canvas id="myChart"></canvas></div>
+        <div class="table-responsive" id="table-result"></div>
+        
+        <div id="chart-result" class="chart-box">
+            <h4 style="text-align:center; color:#1f4037; margin-bottom:10px;">Price Comparison</h4>
+            <canvas id="myChart"></canvas>
+        </div>
     </div>
 
     <div class="history-panel">
-        <h3>Recent History</h3>
+        <h3 style="color: #1f4037; border-bottom: 2px solid #1f4037; padding-bottom: 10px; text-align: center;">Recent History</h3>
         <div id="histList" style="margin-top: 15px;"></div>
     </div>
 </div>
@@ -85,26 +97,24 @@
     let isPaused = false;
     const beep = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
 
-    // --- SCANNER LOGIC ---
+    // "Enter" Key functionality
+    document.getElementById("jewelCode").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            fetchPrices();
+        }
+    });
+
     async function toggleScanner() {
         const container = document.getElementById("scanner-container");
-        if (scanner) {
-            await stopScanner();
-        } else {
-            container.style.display = "block";
-            document.getElementById("camBtn").innerText = "🛑 Close Scanner";
-            startCamera();
-        }
+        if (scanner) { await stopScanner(); } 
+        else { container.style.display = "block"; document.getElementById("camBtn").innerText = "🛑 Close Scanner"; startCamera(); }
     }
 
     async function stopScanner() {
-        if (scanner) {
-            await scanner.stop();
-            scanner = null;
-        }
+        if (scanner) { try { await scanner.stop(); } catch(e) {} scanner = null; }
         document.getElementById("scanner-container").style.display = "none";
         document.getElementById("camBtn").innerText = "📷 Open Barcode Scanner";
-        document.getElementById("camBtn").style.display = "block";
     }
 
     async function startCamera() {
@@ -115,7 +125,7 @@
             const bestCam = devices.find(d => d.label.toLowerCase().includes('back')) || devices[0];
             select.value = bestCam.id;
             runScanner(bestCam.id);
-        } catch (e) { alert("Camera Error: Check HTTPS/Permissions"); }
+        } catch (e) { alert("Camera Error"); }
     }
 
     function runScanner(id) {
@@ -123,97 +133,101 @@
         scanner = new Html5Qrcode("reader");
         scanner.start(id, { fps: 10, qrbox: {width: 250, height: 150} }, (text) => {
             if (isPaused) return;
-            
             isPaused = true;
             beep.play();
             document.getElementById("scan-flash").style.display = "flex";
-            
             const box = document.getElementById("jewelCode");
             let items = box.value.split(",").map(i => i.trim()).filter(i => i !== "");
-            if(!items.includes(text)) {
-                items.push(text);
-                box.value = items.join(", ");
-            }
-
-            setTimeout(() => {
-                isPaused = false;
-                document.getElementById("scan-flash").style.display = "none";
-            }, 1500); // 1.5 second gap between scans
+            if(!items.includes(text)) { items.push(text); box.value = items.join(", "); }
+            setTimeout(() => { isPaused = false; document.getElementById("scan-flash").style.display = "none"; }, 1500);
         });
     }
 
     function restartWithCam(id) { runScanner(id); }
 
-    // --- SEARCH LOGIC ---
     async function fetchPrices() {
         const val = document.getElementById("jewelCode").value;
         if (!val) return;
-
-        // STOP CAMERA AUTOMATICALLY
         await stopScanner();
-
         const codes = [...new Set(val.split(",").map(c => c.trim()).filter(c => c !== ""))];
-        document.getElementById("table-result").innerHTML = "<p style='padding:20px; text-align:center;'>Fetching Data...</p>";
+        document.getElementById("table-result").innerHTML = "<p style='padding:20px; text-align:center;'>Searching...</p>";
 
         const results = await Promise.all(codes.map(c => 
-            fetch(`https://script.google.com/macros/s/AKfycbwiXUnfpNL6gbRwKwsF-ONTkP2V4YzpZSgBxRUTwmOde3wYvo1Cmh5rlhN7thbXsAXEig/exec?code=${encodeURIComponent(c)}`)
+            fetch(`https://script.google.com/macros/s/AKfycby4_4M_Me4ac56IyP_ByQdcW_9sCyNgKQGW1JFP5IS9INr7nwTzx_ak900wy5a6__tUCQ/exec?code=${encodeURIComponent(c)}`)
             .then(r => r.json())
-            .then(data => ({ code: c, cost: data.cost })) // Mapping 'c' prevents undefined
-            .catch(() => ({ code: c, cost: "Error" }))
+            .catch(() => ({ error: "Error", jewelCode: c }))
         ));
-
         renderOutput(results);
-        saveHistory(codes, results);
     }
 
     function renderOutput(data) {
-        let total = 0;
-        let table = `<table><tr><th>Code</th><th>Price</th></tr>`;
-        data.forEach(item => {
-            const price = parseFloat(item.cost) || 0;
-            total += price;
-            table += `<tr><td><strong>${item.code}</strong></td><td>${price > 0 ? '₹ '+price.toLocaleString('en-IN') : item.cost}</td></tr>`;
-        });
-        table += `<tr class="summary-row"><td>TOTAL</td><td>₹ ${total.toLocaleString('en-IN')}</td></tr></table>`;
-        document.getElementById("table-result").innerHTML = table;
+        let totalOriginal = 0, totalUpdated = 0;
+        let table = `<table><tr><th>Code</th><th>Style</th><th>Original Cost</th><th>Updated Cost</th><th>Wt.</th></tr>`;
 
-        const valid = data.filter(d => !isNaN(parseFloat(d.cost)));
+        data.forEach(item => {
+            if (item.error || item.costPrice === "Not Found" || !item.jewelCode) {
+                table += `<tr><td><strong>${item.jewelCode || 'N/A'}</strong></td><td colspan="4" style="color:red; text-align:center;">Not Found</td></tr>`;
+            } else {
+                const costVal = parseFloat(item.costPrice) || 0;
+                const updatedVal = parseFloat(item.updatedCostPrice) || 0;
+                totalOriginal += costVal; totalUpdated += updatedVal;
+                table += `<tr><td><strong>${item.jewelCode}</strong></td><td>${item.styleCode || '-'}</td><td>₹ ${costVal.toLocaleString('en-IN')}</td><td>₹ ${updatedVal.toLocaleString('en-IN')}</td><td>${item.pureWt || '-'}g</td></tr>`;
+            }
+        });
+
+        table += `<tr class="summary-row"><td colspan="2">TOTAL</td><td>₹ ${totalOriginal.toLocaleString('en-IN')}</td><td>₹ ${totalUpdated.toLocaleString('en-IN')}</td><td></td></tr></table>`;
+        document.getElementById("table-result").innerHTML = table;
+        
+        saveHistory(totalUpdated, data.map(d => d.jewelCode).join(", "));
+        updateChart(data);
+    }
+
+    function updateChart(data) {
+        const valid = data.filter(d => d.jewelCode && !d.error && d.costPrice !== "Not Found");
         if (valid.length > 0) {
             document.getElementById("chart-result").style.display = "block";
             if (priceChart) priceChart.destroy();
+            
             priceChart = new Chart(document.getElementById("myChart"), {
                 type: 'bar',
                 data: {
-                    labels: valid.map(v => v.code),
-                    datasets: [{ label: 'Price (₹)', data: valid.map(v => v.cost), backgroundColor: '#1f4037' }]
+                    labels: valid.map(v => v.jewelCode),
+                    datasets: [
+                        {
+                            label: 'Original Cost (₹)',
+                            data: valid.map(v => v.costPrice),
+                            backgroundColor: '#ff512f',
+                            borderRadius: 5
+                        },
+                        {
+                            label: 'Updated Cost (₹)',
+                            data: valid.map(v => v.updatedCostPrice),
+                            backgroundColor: '#1f4037',
+                            borderRadius: 5
+                        }
+                    ]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { callback: value => '₹' + value.toLocaleString('en-IN') } }
+                    }
+                }
             });
         }
     }
 
-    function saveHistory(codes, results) {
+    function saveHistory(total, codes) {
         const hist = JSON.parse(localStorage.getItem("jewel_hist") || "[]");
-        const total = results.reduce((s, i) => s + (parseFloat(i.cost) || 0), 0);
-        hist.unshift({ time: new Date().toLocaleTimeString(), total, codes: codes.join(", "), results });
+        hist.unshift({ time: new Date().toLocaleTimeString(), total, codes });
         localStorage.setItem("jewel_hist", JSON.stringify(hist.slice(0, 5)));
         renderHistoryList();
     }
 
     function renderHistoryList() {
         const hist = JSON.parse(localStorage.getItem("jewel_hist") || "[]");
-        document.getElementById("histList").innerHTML = hist.map((h, i) => `
-            <div class="history-item" onclick='restore(${i})'>
-                <strong>₹ ${h.total.toLocaleString('en-IN')}</strong><br>
-                <small>${h.time} - ${h.codes.substring(0,25)}...</small>
-            </div>
-        `).join("");
-    }
-
-    window.restore = (i) => {
-        const h = JSON.parse(localStorage.getItem("jewel_hist"))[i];
-        document.getElementById("jewelCode").value = h.codes;
-        renderOutput(h.results);
+        document.getElementById("histList").innerHTML = hist.map(h => `<div class="history-item"><strong>₹ ${h.total.toLocaleString('en-IN')}</strong><br><small>${h.time} - ${h.codes.substring(0,25)}...</small></div>`).join("");
     }
 
     function resetAll() {
@@ -222,7 +236,6 @@
         document.getElementById("chart-result").style.display = "none";
         if(priceChart) priceChart.destroy();
     }
-
     renderHistoryList();
 </script>
 </body>
