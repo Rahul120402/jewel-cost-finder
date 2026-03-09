@@ -4,25 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jewel Cost Finder Pro</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    
     <style>
-        /* General Styles */
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        /* ========================================
+           GENERAL STYLES (As per your Initial UI)
+           ========================================
+        */
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+        }
+
         body { 
             font-family: 'Segoe UI', sans-serif; 
             background: linear-gradient(135deg, #1f4037, #99f2c8); 
-            display: flex; justify-content: center; min-height: 100vh; padding: 20px; 
+            display: flex; 
+            justify-content: center; 
+            min-height: 100vh; 
+            padding: 20px; 
         }
 
-        /* Layout Fix: Isko change kiya hai taaki height fixed na dikhe */
         .main-layout { 
             display: flex; 
             gap: 20px; 
             width: 100%; 
             max-width: 1200px; 
             flex-wrap: wrap; 
-            align-items: flex-start; /* Items ko top se align karega */
+            align-items: flex-start; 
         }
 
         .container { 
@@ -31,69 +43,200 @@
             min-width: 350px; 
             padding: 25px; 
             border-radius: 20px; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-            height: fit-content; /* Sirf utni hi height lega jitni zarurat hai */
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1); 
+            height: fit-content; 
         }
-        
-        h1 { text-align: center; margin-bottom: 25px; color: #1f4037; font-size: 2.2rem; }
 
-        .btn { 
-            padding: 14px; border-radius: 10px; border: none; font-weight: 600; 
-            cursor: pointer; width: 100%; margin-bottom: 10px; transition: all 0.2s ease;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
+        h1 { 
+            text-align: center; 
+            margin-bottom: 25px; 
+            color: #1f4037; 
+            font-size: 2.2rem; 
         }
-        .btn:active { transform: scale(0.96); }
+
+        /* ========================================
+           BUTTONS & INPUTS
+           ========================================
+        */
+        .btn { 
+            padding: 14px; 
+            border-radius: 10px; 
+            border: none; 
+            font-weight: 600; 
+            cursor: pointer; 
+            width: 100%; 
+            margin-bottom: 10px; 
+            transition: all 0.2s ease; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 8px; 
+        }
+
+        .btn:active { 
+            transform: scale(0.96); 
+        }
 
         .scan-btn { background: #ff512f; color: white; }
         .search-btn { background: #1f4037; color: white; position: relative; }
         .search-btn:hover { background: #2c5e51; }
         .clear-btn { background: #eee; color: #333; }
-        
-        input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 15px; font-size: 16px; outline: none; transition: 0.3s; }
-        input:focus { border-color: #1f4037; box-shadow: 0 0 8px rgba(31,64,55,0.2); }
 
-        /* Scanner */
-        #scanner-container { display: none; margin-bottom: 20px; border-radius: 15px; overflow: hidden; border: 3px solid #1f4037; position: relative; }
-        #scan-status {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(46, 204, 113, 0.7); color: white;
-            display: none; justify-content: center; align-items: center;
-            font-size: 24px; font-weight: bold; z-index: 10;
-            pointer-events: none;
+        input { 
+            width: 100%; 
+            padding: 14px; 
+            border-radius: 10px; 
+            border: 1px solid #ddd; 
+            margin-bottom: 15px; 
+            font-size: 16px; 
+            outline: none; 
+            transition: 0.3s; 
         }
 
-        .loader {
-            border: 4px solid #f3f3f3; border-top: 4px solid #1f4037;
-            border-radius: 50%; width: 30px; height: 30px;
-            animation: spin 1s linear infinite; display: none; margin: 20px auto;
+        input:focus { 
+            border-color: #1f4037; 
+            box-shadow: 0 0 8px rgba(31,64,55,0.2); 
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Results Display */
+        /* ========================================
+           SCANNER & LOADER
+           ========================================
+        */
+        #scanner-container { 
+            display: none; 
+            margin-bottom: 20px; 
+            border-radius: 15px; 
+            overflow: hidden; 
+            border: 3px solid #1f4037; 
+            position: relative; 
+        }
+
+        #scan-status { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(46, 204, 113, 0.7); 
+            color: white; 
+            display: none; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 24px; 
+            font-weight: bold; 
+            z-index: 10; 
+            pointer-events: none; 
+        }
+
+        .loader { 
+            border: 4px solid #f3f3f3; 
+            border-top: 4px solid #1f4037; 
+            border-radius: 50%; 
+            width: 30px; 
+            height: 30px; 
+            animation: spin 1s linear infinite; 
+            display: none; 
+            margin: 20px auto; 
+        }
+
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+
+        /* ========================================
+           TABLE & RESULTS
+           ========================================
+        */
         .table-responsive { 
             overflow-x: auto; 
             margin-top: 20px; 
-            display: none; /* Pehle se hide rahega taaki space na le */
+            display: none; 
         }
-        .table-visible { display: block; opacity: 1; transform: translateY(0); animation: fadeIn 0.4s; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .table-visible { 
+            display: block; 
+            opacity: 1; 
+            transform: translateY(0); 
+            animation: fadeIn 0.4s; 
+        }
 
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background-color: #f8f9fa; color: #1f4037; font-weight: bold; }
-        
-        .history-panel { background: rgba(255,255,255,0.9); flex: 1; min-width: 280px; padding: 20px; border-radius: 20px; height: fit-content; }
-        .chart-box { margin-top: 30px; height: 350px; display: none; background: #fdfdfd; padding: 15px; border-radius: 15px; border: 1px solid #eee; }
-        
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 14px; 
+        }
+
+        th, td { 
+            padding: 12px; 
+            text-align: left; 
+            border-bottom: 1px solid #eee; 
+        }
+
+        th { 
+            background-color: #f8f9fa; 
+            color: #1f4037; 
+            font-weight: bold; 
+        }
+
+        .preview-img { 
+            width: 80px; 
+            height: 80px; 
+            object-fit: contain; 
+            border-radius: 8px; 
+            border: 1px solid #eee; 
+            background: #fff; 
+        }
+
+        /* ========================================
+           HISTORY & CHART
+           ========================================
+        */
+        .history-panel { 
+            background: rgba(255,255,255,0.9); 
+            flex: 1; 
+            min-width: 280px; 
+            padding: 20px; 
+            border-radius: 20px; 
+            height: fit-content; 
+        }
+
+        .chart-box { 
+            margin-top: 30px; 
+            height: 350px; 
+            display: none; 
+            background: #fdfdfd; 
+            padding: 15px; 
+            border-radius: 15px; 
+            border: 1px solid #eee; 
+        }
+
         .history-item { 
-            background: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; 
-            border-left: 5px solid #1f4037; cursor: pointer; font-size: 13px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s;
+            background: white; 
+            padding: 12px; 
+            border-radius: 10px; 
+            margin-bottom: 10px; 
+            border-left: 5px solid #1f4037; 
+            cursor: pointer; 
+            font-size: 13px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+            transition: 0.2s; 
         }
-        .history-item:hover { background: #f0fdf4; transform: translateX(5px); }
 
-        #reader { width: 100%; background: #000; }
+        .history-item:hover { 
+            background: #f0fdf4; 
+            transform: translateX(5px); 
+        }
+
+        #reader { 
+            width: 100%; 
+            background: #000; 
+        }
     </style>
 </head>
 <body>
@@ -138,23 +281,43 @@
 </div>
 
 <script>
+    /* ========================================
+       API CONFIGURATIONS
+       ========================================
+    */
+    const PRICE_API = "https://script.google.com/macros/s/AKfycby4_4M_Me4ac56IyP_ByQdcW_9sCyNgKQGW1JFP5IS9INr7nwTzx_ak900wy5a6__tUCQ/exec";
+    const IMAGE_API = "https://script.google.com/macros/s/AKfycbzXDQDEhg4U-HzrIH6ntAHRi7-fu4EqcpKZrio3iLaszQuKusOS4e6xp_XYlC9HLBSQ/exec";
+
     let scanner = null;
     let priceChart = null;
     let isScanningPaused = false; 
     const beep = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
 
+    // Handle Enter Key
     document.getElementById("jewelCode").addEventListener("keypress", (e) => {
         if (e.key === "Enter") fetchPrices();
     });
 
+    /* ========================================
+       SCANNER FUNCTIONS
+       ========================================
+    */
     async function toggleScanner() {
         const container = document.getElementById("scanner-container");
-        if (scanner) { await stopScanner(); } 
-        else { container.style.display = "block"; document.getElementById("camBtn").innerText = "🛑 Close Scanner"; startCamera(); }
+        if (scanner) { 
+            await stopScanner(); 
+        } else { 
+            container.style.display = "block"; 
+            document.getElementById("camBtn").innerText = "🛑 Close Scanner"; 
+            startCamera(); 
+        }
     }
 
     async function stopScanner() {
-        if (scanner) { try { await scanner.stop(); } catch(e) {} scanner = null; }
+        if (scanner) { 
+            try { await scanner.stop(); } catch(e) {} 
+            scanner = null; 
+        }
         document.getElementById("scanner-container").style.display = "none";
         document.getElementById("camBtn").innerText = "📷 Open Barcode Scanner";
     }
@@ -166,7 +329,9 @@
             select.innerHTML = devices.map(d => `<option value="${d.id}">${d.label}</option>`).join("");
             const bestCam = devices.find(d => d.label.toLowerCase().includes('back')) || devices[0];
             runScanner(bestCam.id);
-        } catch (e) { alert("Camera Error"); }
+        } catch (e) { 
+            alert("Camera Error"); 
+        }
     }
 
     function runScanner(id) {
@@ -176,43 +341,75 @@
             if (isScanningPaused) return;
             isScanningPaused = true;
             beep.play();
-            const statusIndicator = document.getElementById("scan-status");
-            statusIndicator.style.display = "flex";
+            
+            document.getElementById("scan-status").style.display = "flex";
             const box = document.getElementById("jewelCode");
             let currentVal = box.value.trim();
+            
             if (currentVal) {
                 if (!currentVal.split(',').map(s => s.trim()).includes(text)) {
                     box.value = currentVal + ", " + text;
                 }
-            } else { box.value = text; }
+            } else { 
+                box.value = text; 
+            }
+
             setTimeout(() => {
                 isScanningPaused = false;
-                statusIndicator.style.display = "none";
+                document.getElementById("scan-status").style.display = "none";
             }, 2000); 
         });
     }
 
+    /* ========================================
+       CORE DATA LOGIC
+       ========================================
+    */
+
+    // Helper: Convert Drive URL to Direct Viewable Link
+    function getDirectLink(url) {
+        if (!url) return "";
+        const fileId = url.match(/[-\w]{25,}/);
+        if (fileId) {
+            // Using lh3 format for high-speed direct loading
+            return `https://lh3.googleusercontent.com/u/0/d/${fileId[0]}=w200-h200-p-k-no-iv1`;
+        }
+        return url;
+    }
+
     async function fetchPrices() {
-        const val = document.getElementById("jewelCode").value;
-        if (!val) return;
+        const inputVal = document.getElementById("jewelCode").value;
+        if (!inputVal) return;
 
         const loader = document.getElementById("loader");
         const tableArea = document.getElementById("table-result");
         const searchBtn = document.getElementById("searchBtn");
         
         loader.style.display = "block";
-        tableArea.style.display = "none"; // Hide table while searching
+        tableArea.style.display = "none";
         searchBtn.innerText = "Searching...";
 
         await stopScanner();
-        const codes = [...new Set(val.split(",").map(c => c.trim()).filter(c => c !== ""))];
+        const codes = [...new Set(inputVal.split(",").map(c => c.trim()).filter(c => c !== ""))];
 
         try {
-            const results = await Promise.all(codes.map(c => 
-                fetch(`https://script.google.com/macros/s/AKfycby4_4M_Me4ac56IyP_ByQdcW_9sCyNgKQGW1JFP5IS9INr7nwTzx_ak900wy5a6__tUCQ/exec?code=${encodeURIComponent(c)}`)
-                .then(r => r.json())
-                .catch(() => ({ error: "Error", jewelCode: c }))
-            ));
+            const results = await Promise.all(codes.map(async (jewelId) => {
+                try {
+                    // 1. Get Price Data
+                    const priceRes = await fetch(`${PRICE_API}?code=${encodeURIComponent(jewelId)}`).then(r => r.json());
+                    
+                    let finalImage = "";
+                    if (priceRes.styleCode) {
+                        // 2. Get Image Data using SKU (styleCode)
+                        const imageRes = await fetch(`${IMAGE_API}?sku=${encodeURIComponent(priceRes.styleCode)}`).then(r => r.json());
+                        finalImage = getDirectLink(imageRes.imageUrl);
+                    }
+                    
+                    return { ...priceRes, imageUrl: finalImage, jewelCode: jewelId };
+                } catch(err) { 
+                    return { error: "Fetch Failed", jewelCode: jewelId }; 
+                }
+            }));
             renderOutput(results);
         } finally {
             loader.style.display = "none";
@@ -222,44 +419,100 @@
 
     function renderOutput(data) {
         const tableArea = document.getElementById("table-result");
-        let totalOriginal = 0, totalUpdated = 0;
-        let table = `<table><tr><th>Code</th><th>Style</th><th>Original</th><th>Updated</th><th>Wt.</th></tr>`;
+        let totalOriginal = 0;
+        let totalUpdated = 0;
+        
+        let tableHTML = `
+            <table>
+                <tr>
+                    <th>Preview</th>
+                    <th>Code</th>
+                    <th>Style</th>
+                    <th>Original</th>
+                    <th>Updated</th>
+                    <th>Wt.</th>
+                </tr>
+        `;
 
         data.forEach(item => {
             if (item.error || item.costPrice === "Not Found") {
-                table += `<tr><td><strong>${item.jewelCode}</strong></td><td colspan="4" style="color:red; text-align:center;">Not Found</td></tr>`;
+                tableHTML += `
+                    <tr>
+                        <td colspan="6" style="color:red; text-align:center;">
+                            ${item.jewelCode} - Data Not Found
+                        </td>
+                    </tr>`;
             } else {
-                const c = parseFloat(item.costPrice) || 0;
-                const u = parseFloat(item.updatedCostPrice) || 0;
-                totalOriginal += c; totalUpdated += u;
-                table += `<tr><td><strong>${item.jewelCode}</strong></td><td>${item.styleCode || '-'}</td><td>₹${c.toLocaleString('en-IN')}</td><td>₹${u.toLocaleString('en-IN')}</td><td>${item.pureWt}g</td></tr>`;
+                const orig = parseFloat(item.costPrice) || 0;
+                const upd = parseFloat(item.updatedCostPrice) || 0;
+                totalOriginal += orig;
+                totalUpdated += upd;
+                
+                const imgTag = item.imageUrl 
+                    ? `<img src="${item.imageUrl}" class="preview-img" onerror="this.src='https://via.placeholder.com/80?text=Error';">`
+                    : `<div style="width:80px;height:80px;background:#f9f9f9;display:flex;align-items:center;justify-content:center;font-size:10px;border:1px solid #ddd;border-radius:8px;">NO IMAGE</div>`;
+
+                tableHTML += `
+                    <tr>
+                        <td>${imgTag}</td>
+                        <td><strong>${item.jewelCode}</strong></td>
+                        <td>${item.styleCode || '-'}</td>
+                        <td>₹${orig.toLocaleString('en-IN')}</td>
+                        <td>₹${upd.toLocaleString('en-IN')}</td>
+                        <td>${item.pureWt || '-'}g</td>
+                    </tr>`;
             }
         });
 
-        table += `<tr style="background:#eef6f3; font-weight:bold;"><td colspan="2">TOTAL</td><td>₹${totalOriginal.toLocaleString('en-IN')}</td><td>₹${totalUpdated.toLocaleString('en-IN')}</td><td></td></tr></table>`;
-        tableArea.innerHTML = table;
-        tableArea.style.display = "block"; // Show table now
+        tableHTML += `
+                <tr style="background:#eef6f3; font-weight:bold;">
+                    <td colspan="3">TOTAL</td>
+                    <td>₹${totalOriginal.toLocaleString('en-IN')}</td>
+                    <td>₹${totalUpdated.toLocaleString('en-IN')}</td>
+                    <td></td>
+                </tr>
+            </table>
+        `;
+
+        tableArea.innerHTML = tableHTML;
+        tableArea.style.display = "block";
         tableArea.classList.add("table-visible");
         
         saveHistory(totalUpdated, data.map(d => d.jewelCode).join(", "));
         updateChart(data);
     }
 
+    /* ========================================
+       CHART & HISTORY
+       ========================================
+    */
     function updateChart(data) {
-        const valid = data.filter(d => !d.error && d.costPrice !== "Not Found");
-        if (valid.length > 0) {
+        const validItems = data.filter(d => !d.error && d.costPrice !== "Not Found");
+        if (validItems.length > 0) {
             document.getElementById("chart-result").style.display = "block";
             if (priceChart) priceChart.destroy();
+            
             priceChart = new Chart(document.getElementById("myChart"), {
                 type: 'bar',
                 data: {
-                    labels: valid.map(v => v.jewelCode),
+                    labels: validItems.map(v => v.jewelCode),
                     datasets: [
-                        { label: 'Original Cost', data: valid.map(v => v.costPrice), backgroundColor: '#ff512f' },
-                        { label: 'Updated Cost', data: valid.map(v => v.updatedCostPrice), backgroundColor: '#1f4037' }
+                        { 
+                            label: 'Original Cost', 
+                            data: validItems.map(v => v.costPrice), 
+                            backgroundColor: '#ff512f' 
+                        },
+                        { 
+                            label: 'Updated Cost', 
+                            data: validItems.map(v => v.updatedCostPrice), 
+                            backgroundColor: '#1f4037' 
+                        }
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false 
+                }
             });
         }
     }
@@ -267,15 +520,25 @@
     function saveHistory(total, codes) {
         if (total === 0) return;
         let hist = JSON.parse(localStorage.getItem("jewel_hist") || "[]");
+        
+        // Remove duplicate entry if exists
         hist = hist.filter(item => item.codes !== codes);
-        hist.unshift({ time: new Date().toLocaleTimeString(), total, codes });
-        localStorage.setItem("jewel_hist", JSON.stringify(hist.slice(0, 5)));
+        
+        hist.unshift({ 
+            time: new Date().toLocaleTimeString(), 
+            total: total, 
+            codes: codes 
+        });
+        
+        localStorage.setItem("jewel_hist", JSON.stringify(hist.slice(0, 10)));
         renderHistoryList();
     }
 
     function renderHistoryList() {
         const hist = JSON.parse(localStorage.getItem("jewel_hist") || "[]");
-        document.getElementById("histList").innerHTML = hist.map(h => `
+        const histDiv = document.getElementById("histList");
+        
+        histDiv.innerHTML = hist.map(h => `
             <div class="history-item" onclick="loadHistory('${h.codes}')">
                 <strong>₹${h.total.toLocaleString('en-IN')}</strong><br>
                 <small>${h.time} - ${h.codes.substring(0,30)}...</small>
@@ -296,6 +559,7 @@
         if(priceChart) priceChart.destroy();
     }
     
+    // Initial Load
     window.onload = renderHistoryList;
 </script>
 </body>
