@@ -409,7 +409,7 @@
         let hist = JSON.parse(localStorage.getItem("jewel_hist") || "[]");
         hist = hist.filter(item => item.codes !== codes);
         hist.unshift({ time: new Date().toLocaleTimeString(), total: total, codes: codes });
-        localStorage.setItem("jewel_hist", JSON.stringify(hist.slice(0, 10)));
+        localStorage.setItem("jewel_hist", JSON.stringify(hist.slice(0, 5)));
         renderHistoryList();
     }
 
@@ -441,3 +441,4 @@
 </script>
 </body>
 </html>
+
