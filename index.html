@@ -109,7 +109,6 @@
 </div>
 
 <script>
-    // NEW UNIFIED API URL
     const MASTER_API = "https://script.google.com/macros/s/AKfycbwPUeTFAxqVj2bxgErsn99AO4YptPaNQEh2eJRuVSyhyfgT3uc7kiQx3JR6_dA-acgULQ/exec";
 
     let scanner = null;
@@ -221,17 +220,20 @@
         let tableHTML = `<table><tr><th>Preview</th><th>Code</th><th>Style</th><th>Original</th><th>Updated</th><th>Wt.</th></tr>`;
 
         data.forEach(item => {
-            if (item.error || item.costPrice === "Not Found" || !item.costPrice) {
-                tableHTML += `<tr><td colspan="6" style="color:red; text-align:center;">${item.jewelCode || 'Unknown'} - Data Not Found</td></tr>`;
+            // Updated logic: Even if costPrice is "Not Found", show the row with available data
+            if (!item || item.error) {
+                tableHTML += `<tr><td colspan="6" style="color:red; text-align:center;">${item?.jewelCode || 'Unknown'} - Data Not Found</td></tr>`;
             } else {
                 const orig = parseFloat(item.costPrice) || 0;
                 const upd = parseFloat(item.updatedCostPrice) || 0;
                 totalOriginal += orig; 
                 totalUpdated += upd;
                 
-                const imgTag = item.imageUrl 
-                    ? `<img src="${item.imageUrl}" class="preview-img" referrerpolicy="no-referrer" onclick="openImage('${item.imageUrl}', '${item.jewelCode}')" onerror="this.src='https://via.placeholder.com/80?text=Reloading';">`
-                    : `<div style="width:80px;height:80px;background:#f9f9f9;display:flex;align-items:center;justify-content:center;font-size:10px;border:1px solid #ddd;border-radius:8px;">NO IMAGE</div>`;
+                // Image Handling: If URL is missing or "Not Found", show a neat placeholder
+                const hasValidImg = item.imageUrl && item.imageUrl !== "" && item.imageUrl !== "Not Found";
+                const imgTag = hasValidImg 
+                    ? `<img src="${item.imageUrl}" class="preview-img" referrerpolicy="no-referrer" onclick="openImage('${item.imageUrl}', '${item.jewelCode}')" onerror="this.src='https://via.placeholder.com/80?text=No+Image';">`
+                    : `<div style="width:80px;height:80px;background:#f9f9f9;display:flex;align-items:center;justify-content:center;font-size:10px;color:#888;border:1px solid #ddd;border-radius:8px;text-align:center;">NO IMAGE</div>`;
 
                 tableHTML += `<tr>
                     <td>${imgTag}</td>
@@ -249,12 +251,13 @@
         tableArea.style.display = "block";
         tableArea.classList.add("table-visible");
         
-        saveHistory(totalUpdated, data.map(d => d.jewelCode).join(", "));
+        saveHistory(totalUpdated, data.filter(d => d && d.jewelCode).map(d => d.jewelCode).join(", "));
         updateChart(data);
     }
 
     function updateChart(data) {
-        const validItems = data.filter(d => !d.error && d.costPrice && d.costPrice !== "Not Found");
+        // Updated filter: Still show chart for items even if they have partial data
+        const validItems = data.filter(d => d && !d.error && (d.costPrice || d.jewelCode));
         if (validItems.length > 0) {
             document.getElementById("chart-result").style.display = "block";
             if (priceChart) priceChart.destroy();
@@ -263,8 +266,8 @@
                 data: {
                     labels: validItems.map(v => v.jewelCode),
                     datasets: [
-                        { label: 'Original Cost', data: validItems.map(v => v.costPrice), backgroundColor: '#ff512f' },
-                        { label: 'Updated Cost', data: validItems.map(v => v.updatedCostPrice), backgroundColor: '#1f4037' }
+                        { label: 'Original Cost', data: validItems.map(v => parseFloat(v.costPrice) || 0), backgroundColor: '#ff512f' },
+                        { label: 'Updated Cost', data: validItems.map(v => parseFloat(v.updatedCostPrice) || 0), backgroundColor: '#1f4037' }
                     ]
                 },
                 options: { responsive: true, maintainAspectRatio: false }
@@ -273,7 +276,7 @@
     }
 
     function saveHistory(total, codes) {
-        if (total === 0) return;
+        if (!codes || codes === "") return;
         let hist = JSON.parse(localStorage.getItem("jewel_hist") || "[]");
         hist = hist.filter(item => item.codes !== codes);
         hist.unshift({ time: new Date().toLocaleTimeString(), total: total, codes: codes });
