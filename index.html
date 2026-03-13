@@ -3,109 +3,519 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jewel Cost Finder Pro - Full Features</title>
-    
+    <title>Jewel Cost Finder Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        /* ========================================
-           ORIGINAL STYLES & EFFECTS
-           ======================================== */
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background: linear-gradient(135deg, #1f4037, #99f2c8); 
-            display: flex; justify-content: center; min-height: 100vh; padding: 20px; 
+        :root {
+            --gold: #C9A84C;
+            --gold-light: #E8C97A;
+            --gold-dark: #8B6914;
+            --border: rgba(201, 168, 76, 0.22);
+            --border-bright: rgba(201, 168, 76, 0.5);
+            --text-primary: #F0EAD6;
+            --text-secondary: #B8A07A;
+            --text-muted: #6A5A40;
+            --green: #2ecc71;
+            --red: #e74c3c;
         }
-        .main-layout { display: flex; gap: 20px; width: 100%; max-width: 1200px; flex-wrap: wrap; align-items: flex-start; }
-        .container { background: #fff; flex: 3; min-width: 350px; padding: 25px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); height: fit-content; }
-        h1 { text-align: center; margin-bottom: 25px; color: #1f4037; font-size: 2.2rem; }
-        
-        .btn { padding: 14px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 10px; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn:active { transform: scale(0.96); }
-        .scan-btn { background: #ff512f; color: white; }
-        .search-btn { background: #1f4037; color: white; position: relative; }
-        .search-btn:hover { background: #2c5e51; }
-        .clear-btn { background: #eee; color: #333; }
 
-        input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 15px; font-size: 16px; outline: none; transition: 0.3s; }
-        input:focus { border-color: #1f4037; box-shadow: 0 0 8px rgba(31,64,55,0.2); }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        #scanner-container { display: none; margin-bottom: 20px; border-radius: 15px; overflow: hidden; border: 3px solid #1f4037; position: relative; }
-        #scan-status { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(46, 204, 113, 0.7); color: white; display: none; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; z-index: 10; }
+        body {
+            font-family: 'Jost', sans-serif;
+            background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 30px 20px;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
 
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #1f4037; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; display: none; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Rich layered background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 70% 60% at 50% 0%, rgba(201,168,76,0.10) 0%, transparent 65%),
+                radial-gradient(ellipse 50% 40% at 0% 100%, rgba(100,120,255,0.06) 0%, transparent 55%),
+                radial-gradient(ellipse 50% 40% at 100% 100%, rgba(100,120,255,0.05) 0%, transparent 55%);
+            pointer-events: none;
+            z-index: 0;
+        }
 
-        .table-responsive { overflow-x: auto; margin-top: 20px; display: none; }
-        .table-visible { display: block; opacity: 1; transform: translateY(0); animation: fadeIn 0.4s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .main-layout {
+            display: flex;
+            gap: 22px;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── HEADER ── */
+        .app-header {
+            width: 100%;
+            text-align: center;
+            padding-bottom: 32px;
+            animation: fadeDown 0.7s ease both;
+        }
+        .crown-line {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 10px;
+        }
+        .crown-line::before, .crown-line::after {
+            content: '';
+            flex: 1;
+            max-width: 160px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            box-shadow: 0 0 8px var(--gold);
+        }
+        .crown-icon {
+            font-size: 22px;
+            filter: drop-shadow(0 0 10px var(--gold)) drop-shadow(0 0 25px rgba(255,215,0,0.5));
+            animation: glowPulse 2.5s ease-in-out infinite;
+        }
+        @keyframes glowPulse {
+            0%,100% { filter: drop-shadow(0 0 6px var(--gold)); }
+            50%      { filter: drop-shadow(0 0 14px var(--gold)) drop-shadow(0 0 25px rgba(201,168,76,0.5)); }
+        }
+        h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.7rem;
+            font-weight: 300;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #FFF0A0 0%, #FFD700 40%, #FFA500 70%, #FFD700 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 2px 12px rgba(255,215,0,0.4));
+        }
+        .app-subtitle {
+            font-size: 10px;
+            letter-spacing: 0.45em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 6px;
+        }
+
+        /* ── MAIN CARD ── */
+        .container {
+            background: linear-gradient(160deg, #1e2340 0%, #181d35 100%);
+            flex: 3;
+            min-width: 350px;
+            padding: 32px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            height: fit-content;
+            animation: fadeUp 0.8s ease 0.1s both;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(100,120,255,0.08), 0 20px 60px rgba(0,0,0,0.4);
+        }
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 10%; right: 10%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), var(--gold-light), var(--gold), transparent);
+            box-shadow: 0 0 10px rgba(201,168,76,0.4);
+        }
+        /* subtle inner corner glow */
+        .container::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 6px;
+            background: radial-gradient(ellipse 80% 30% at 50% 0%, rgba(255,215,0,0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        /* ── BUTTONS ── */
+        .btn {
+            padding: 15px;
+            border-radius: 3px;
+            border: none;
+            font-family: 'Jost', sans-serif;
+            font-weight: 500;
+            font-size: 12px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 12px;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn:active { transform: scale(0.97); }
+
+        .scan-btn {
+            background: transparent;
+            color: var(--gold);
+            border: 1px solid var(--gold-dark);
+            position: relative;
+            overflow: hidden;
+        }
+        .scan-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,215,0,0.12), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+        .scan-btn:hover::before { transform: translateX(100%); }
+        .scan-btn:hover {
+            border-color: var(--gold);
+            color: var(--gold-light);
+            box-shadow: 0 0 20px rgba(255,215,0,0.2), inset 0 0 15px rgba(255,215,0,0.05);
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, var(--gold-dark), var(--gold), var(--gold-dark));
+            background-size: 200% 100%;
+            color: #0f1a2e;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+            transition: all 0.3s ease;
+        }
+        .search-btn:hover {
+            background-position: 100% 0;
+            box-shadow: 0 6px 28px rgba(201,168,76,0.45);
+            transform: translateY(-2px);
+        }
+
+        .clear-btn {
+            background: rgba(255,255,255,0.04);
+            color: var(--text-muted);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .clear-btn:hover {
+            background: rgba(255,255,255,0.07);
+            color: var(--text-secondary);
+            border-color: rgba(255,255,255,0.15);
+        }
+
+        /* ── INPUT ── */
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 3px;
+            border: 1px solid rgba(255,215,0,0.15);
+            background: rgba(0,0,0,0.3);
+            color: var(--text-primary);
+            font-family: 'Jost', sans-serif;
+            font-size: 15px;
+            margin-bottom: 15px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        input::placeholder { color: var(--text-muted); }
+        input:focus {
+            border-color: rgba(255,215,0,0.5);
+            background: rgba(0,0,0,0.4);
+            box-shadow: 0 0 0 3px rgba(255,215,0,0.08), 0 0 20px rgba(255,215,0,0.1);
+        }
+
+        /* ── SCANNER ── */
+        #scanner-container {
+            display: none;
+            margin-bottom: 20px;
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid var(--gold-dark);
+            position: relative;
+            box-shadow: 0 0 30px rgba(255,180,0,0.15);
+        }
+        #scan-status {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(255,200,0,0.88);
+            color: #1C1108;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            z-index: 10;
+        }
+        #camList {
+            padding: 6px 10px;
+            background: rgba(0,0,0,0.4);
+            color: var(--text-secondary);
+            border: 1px solid rgba(255,215,0,0.2);
+            border-radius: 2px;
+            font-family: 'Jost', sans-serif;
+            font-size: 12px;
+            margin-bottom: 5px;
+            width: 80%;
+        }
+
+        /* ── LOADER ── */
+        .loader {
+            border: 3px solid rgba(255,215,0,0.1);
+            border-top: 3px solid var(--gold);
+            border-radius: 50%;
+            width: 34px;
+            height: 34px;
+            animation: spin 0.9s linear infinite;
+            display: none;
+            margin: 22px auto;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* ── TABLE ── */
+        .table-responsive {
+            overflow-x: auto;
+            margin-top: 22px;
+            display: none;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.3);
+        }
+        .table-visible { display: block; animation: fadeUp 0.4s ease both; }
 
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background-color: #f8f9fa; color: #1f4037; font-weight: bold; }
+        th {
+            padding: 13px 15px;
+            text-align: left;
+            background: rgba(255,180,0,0.08);
+            color: var(--gold);
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+        td {
+            padding: 14px 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,215,0,0.06);
+            color: var(--text-secondary);
+            vertical-align: middle;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,215,0,0.04); }
 
-        .preview-img { width: 80px; height: 80px; object-fit: contain; border-radius: 8px; border: 1px solid #eee; background: #fff; cursor: zoom-in; transition: 0.2s; }
-        .preview-img:hover { opacity: 0.8; }
+        .preview-img {
+            width: 80px; height: 80px;
+            object-fit: contain;
+            border-radius: 3px;
+            border: 1px solid rgba(255,215,0,0.15);
+            background: rgba(0,0,0,0.3);
+            cursor: zoom-in;
+            transition: all 0.25s ease;
+        }
+        .preview-img:hover {
+            border-color: var(--gold);
+            box-shadow: 0 0 20px rgba(255,215,0,0.3);
+            transform: scale(1.06);
+        }
 
-        .history-panel { background: rgba(255,255,255,0.9); flex: 1; min-width: 280px; padding: 20px; border-radius: 20px; height: fit-content; }
-        .chart-box { margin-top: 30px; height: 350px; display: none; background: #fdfdfd; padding: 15px; border-radius: 15px; border: 1px solid #eee; }
-        .history-item { background: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #1f4037; cursor: pointer; font-size: 13px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.2s; }
-        .history-item:hover { background: #f0fdf4; transform: translateX(5px); }
+        tr.total-row td {
+            background: rgba(255,215,0,0.08) !important;
+            border-top: 1px solid rgba(255,215,0,0.3) !important;
+            color: var(--gold) !important;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.05em;
+        }
 
-        /* Zoom Modal */
-        .img-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); cursor: zoom-out; align-items: center; justify-content: center; flex-direction: column; }
-        .img-modal-content { max-width: 90%; max-height: 80vh; border-radius: 10px; box-shadow: 0 0 30px rgba(255,255,255,0.1); animation: zoomIn 0.3s ease; }
-        @keyframes zoomIn { from {transform: scale(0.5); opacity: 0;} to {transform: scale(1); opacity: 1;} }
-        .close-btn { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; }
+        /* ── CHART ── */
+        .chart-box {
+            margin-top: 25px;
+            height: 350px;
+            display: none;
+            background: rgba(0,0,0,0.25);
+            padding: 18px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+        .chart-box h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 16px;
+            font-weight: 300;
+            color: var(--gold);
+            letter-spacing: 0.3em;
+            text-align: center;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            
+        }
+
+        /* ── HISTORY ── */
+        .history-panel {
+            background: linear-gradient(160deg, #1e2340 0%, #181d35 100%);
+            flex: 1;
+            min-width: 280px;
+            padding: 26px 20px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            height: fit-content;
+            animation: fadeUp 0.8s ease 0.2s both;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(100,120,255,0.06), 0 20px 60px rgba(0,0,0,0.4);
+        }
+        .history-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 10%; right: 10%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), var(--gold-light), var(--gold), transparent);
+            box-shadow: 0 0 10px rgba(201,168,76,0.4);
+        }
+        .history-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 17px;
+            font-weight: 300;
+            letter-spacing: 0.32em;
+            text-transform: uppercase;
+            color: var(--gold);
+            text-align: center;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+            
+        }
+
+        .history-item {
+            background: rgba(0,0,0,0.25);
+            padding: 13px 14px;
+            border-radius: 3px;
+            margin-bottom: 8px;
+            border-left: 2px solid var(--gold-dark);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.22s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .history-item::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(255,215,0,0.07), transparent);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+        .history-item:hover::before { transform: scaleX(1); }
+        .history-item:hover {
+            border-left-color: var(--gold);
+            transform: translateX(4px);
+            box-shadow: 0 0 15px rgba(255,215,0,0.08);
+        }
+
+        /* ── MODAL ── */
+        .img-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.95);
+            cursor: zoom-out;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            backdrop-filter: blur(8px);
+        }
+        .img-modal-content {
+            max-width: 90%; max-height: 80vh;
+            border-radius: 3px;
+            border: 1px solid var(--gold-dark);
+            box-shadow: 0 0 60px rgba(255,215,0,0.2);
+            animation: zoomIn 0.3s ease;
+        }
+        @keyframes zoomIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .close-btn {
+            position: absolute;
+            top: 20px; right: 30px;
+            color: var(--text-muted);
+            font-size: 40px;
+            font-weight: 300;
+            cursor: pointer;
+            transition: all 0.2s;
+            line-height: 1;
+        }
+        .close-btn:hover { color: var(--gold); text-shadow: 0 0 15px var(--gold); }
+
+        @keyframes fadeUp   { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 640px) {
+            h1 { font-size: 2.7rem; }
+            .container { padding: 20px; }
+        }
     </style>
 </head>
 <body>
 
 <div id="imageModal" class="img-modal" onclick="closeImage()">
-    <span class="close-btn">×</span>
+    <span class="close-btn">&times;</span>
     <img id="fullImage" class="img-modal-content">
-    <div id="imgCaption" style="color: white; margin-top: 15px; font-size: 18px; font-weight: 500;"></div>
+    <div id="imgCaption" style="color:var(--text-secondary); margin-top:15px; font-size:14px; letter-spacing:0.2em;"></div>
 </div>
 
 <div class="main-layout">
-    <div class="container">
-        <h1>Jewel Cost Finder</h1>
 
-        <button class="btn scan-btn" id="camBtn" onclick="toggleScanner()">📷 Open Barcode Scanner</button>
-        
+    <div class="app-header">
+        <div class="crown-line"><span class="crown-icon">&#9830;</span></div>
+        <h1>Jewel Cost Finder</h1>
+        <p class="app-subtitle">Premium Jewellery Price Intelligence</p>
+    </div>
+
+    <div class="container">
+        <button class="btn scan-btn" id="camBtn" onclick="toggleScanner()">&#128247; Open Barcode Scanner</button>
+
         <div id="scanner-container">
-            <div id="scan-status">✅ CODE SCANNED!</div>
+            <div id="scan-status">&#9989; CODE SCANNED!</div>
             <div id="reader"></div>
-            <div style="background: #fff; padding: 10px; text-align: center;">
-                <select id="camList" style="padding: 5px; margin-bottom: 5px; width: 80%;" onchange="restartWithCam(this.value)"></select>
-                <button class="btn clear-btn" style="margin:0; width: auto;" onclick="toggleScanner()">Close Camera</button>
+            <div style="background:rgba(0,0,0,0.4); padding:10px; text-align:center; border-top:1px solid var(--border);">
+                <select id="camList" onchange="restartWithCam(this.value)"></select>
+                <button class="btn clear-btn" style="margin:6px auto 0; width:auto; padding:8px 18px;" onclick="toggleScanner()">Close Camera</button>
             </div>
         </div>
 
         <input type="text" id="jewelCode" placeholder="Enter Jewel Codes & Press Enter">
-        
+
         <div style="display:flex; gap:10px;">
             <button class="btn search-btn" id="searchBtn" onclick="fetchPrices()">
-                <span>Analyze & Search</span>
+                <span>Analyze &amp; Search</span>
             </button>
             <button class="btn clear-btn" onclick="resetAll()">Clear All</button>
         </div>
 
         <div id="loader" class="loader"></div>
         <div class="table-responsive" id="table-result"></div>
-        
+
         <div id="chart-result" class="chart-box">
-            <h4 style="text-align:center; color:#1f4037; margin-bottom:10px;">Price Comparison</h4>
+            <h4>Price Comparison</h4>
             <canvas id="myChart"></canvas>
         </div>
     </div>
 
     <div class="history-panel">
-        <h3 style="color: #1f4037; border-bottom: 2px solid #1f4037; padding-bottom: 10px; text-align: center;">Recent History</h3>
-        <div id="histList" style="margin-top: 15px;"></div>
+        <h3>Recent History</h3>
+        <div id="histList" style="margin-top:10px;"></div>
     </div>
+
 </div>
 
 <script>
@@ -113,7 +523,7 @@
 
     let scanner = null;
     let priceChart = null;
-    let isScanningPaused = false; 
+    let isScanningPaused = false;
     const beep = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
 
     document.getElementById("jewelCode").addEventListener("keypress", (e) => {
@@ -135,11 +545,11 @@
 
     async function toggleScanner() {
         const container = document.getElementById("scanner-container");
-        if (scanner) { await stopScanner(); } 
-        else { 
-            container.style.display = "block"; 
-            document.getElementById("camBtn").innerText = "🛑 Close Scanner"; 
-            startCamera(); 
+        if (scanner) { await stopScanner(); }
+        else {
+            container.style.display = "block";
+            document.getElementById("camBtn").innerText = "🛑 Close Scanner";
+            startCamera();
         }
     }
 
@@ -159,9 +569,7 @@
         } catch (e) { alert("Camera Error"); }
     }
 
-    function restartWithCam(id) {
-        runScanner(id);
-    }
+    function restartWithCam(id) { runScanner(id); }
 
     function runScanner(id) {
         if(scanner) scanner.stop();
@@ -181,7 +589,7 @@
             setTimeout(() => {
                 isScanningPaused = false;
                 document.getElementById("scan-status").style.display = "none";
-            }, 2000); 
+            }, 2000);
         });
     }
 
@@ -191,20 +599,20 @@
         const loader = document.getElementById("loader");
         const tableArea = document.getElementById("table-result");
         const searchBtn = document.getElementById("searchBtn");
-        
+
         loader.style.display = "block";
         tableArea.style.display = "none";
         searchBtn.innerText = "Searching...";
-        
+
         await stopScanner();
         const codes = [...new Set(inputVal.split(",").map(c => c.trim()).filter(c => c !== ""))];
-        
+
         try {
             const results = await Promise.all(codes.map(async (jewelId) => {
                 try {
                     return await fetch(`${MASTER_API}?code=${encodeURIComponent(jewelId)}`).then(r => r.json());
-                } catch(err) { 
-                    return { error: "Fetch Failed", jewelCode: jewelId }; 
+                } catch(err) {
+                    return { error: "Fetch Failed", jewelCode: jewelId };
                 }
             }));
             renderOutput(results);
@@ -220,43 +628,41 @@
         let tableHTML = `<table><tr><th>Preview</th><th>Code</th><th>Style</th><th>Original</th><th>Updated</th><th>Wt.</th></tr>`;
 
         data.forEach(item => {
-            // Updated logic: Even if costPrice is "Not Found", show the row with available data
             if (!item || item.error) {
-                tableHTML += `<tr><td colspan="6" style="color:red; text-align:center;">${item?.jewelCode || 'Unknown'} - Data Not Found</td></tr>`;
+                tableHTML += `<tr><td colspan="6" style="color:#FF5252; text-align:center; padding:14px; font-size:12px; letter-spacing:0.1em;">${item?.jewelCode || 'Unknown'} - Data Not Found</td></tr>`;
             } else {
                 const orig = parseFloat(item.costPrice) || 0;
                 const upd = parseFloat(item.updatedCostPrice) || 0;
-                totalOriginal += orig; 
+                totalOriginal += orig;
                 totalUpdated += upd;
-                
-                // Image Handling: If URL is missing or "Not Found", show a neat placeholder
+
                 const hasValidImg = item.imageUrl && item.imageUrl !== "" && item.imageUrl !== "Not Found";
-                const imgTag = hasValidImg 
+                const imgTag = hasValidImg
                     ? `<img src="${item.imageUrl}" class="preview-img" referrerpolicy="no-referrer" onclick="openImage('${item.imageUrl}', '${item.jewelCode}')" onerror="this.src='https://via.placeholder.com/80?text=No+Image';">`
-                    : `<div style="width:80px;height:80px;background:#f9f9f9;display:flex;align-items:center;justify-content:center;font-size:10px;color:#888;border:1px solid #ddd;border-radius:8px;text-align:center;">NO IMAGE</div>`;
+                    : `<div style="width:80px;height:80px;background:rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text-muted);border:1px solid rgba(255,215,0,0.1);border-radius:3px;text-align:center;">NO IMAGE</div>`;
 
                 tableHTML += `<tr>
                     <td>${imgTag}</td>
-                    <td><strong>${item.jewelCode}</strong></td>
-                    <td>${item.styleCode || '-'}</td>
-                    <td>₹${orig.toLocaleString('en-IN')}</td>
-                    <td>₹${upd.toLocaleString('en-IN')}</td>
-                    <td>${item.pureWt || '-'}g</td>
+                    <td style="color:var(--text-primary); font-weight:600; font-size:14px; letter-spacing:0.03em;">${item.jewelCode}</td>
+                    <td style="color:var(--text-primary); font-size:13px;">${item.styleCode || '-'}</td>
+                    <td style="color:var(--text-primary); font-size:14px;">&#8377;${orig.toLocaleString('en-IN')}</td>
+                    <td style="color:#2ecc71; font-size:14px; font-weight:700;">&#8377;${upd.toLocaleString('en-IN')}</td>
+                    <td style="color:var(--text-primary); font-size:13px;">${item.pureWt || '-'}g</td>
                 </tr>`;
             }
         });
 
-        tableHTML += `<tr style="background:#eef6f3; font-weight:bold;"><td colspan="3">TOTAL</td><td>₹${totalOriginal.toLocaleString('en-IN')}</td><td>₹${totalUpdated.toLocaleString('en-IN')}</td><td></td></tr></table>`;
+        tableHTML += `<tr class="total-row"><td colspan="3">TOTAL</td><td>&#8377;${totalOriginal.toLocaleString('en-IN')}</td><td style="color:#2ecc71;">&#8377;${totalUpdated.toLocaleString('en-IN')}</td><td></td></tr></table>`;
+
         tableArea.innerHTML = tableHTML;
         tableArea.style.display = "block";
         tableArea.classList.add("table-visible");
-        
+
         saveHistory(totalUpdated, data.filter(d => d && d.jewelCode).map(d => d.jewelCode).join(", "));
         updateChart(data);
     }
 
     function updateChart(data) {
-        // Updated filter: Still show chart for items even if they have partial data
         const validItems = data.filter(d => d && !d.error && (d.costPrice || d.jewelCode));
         if (validItems.length > 0) {
             document.getElementById("chart-result").style.display = "block";
@@ -266,11 +672,21 @@
                 data: {
                     labels: validItems.map(v => v.jewelCode),
                     datasets: [
-                        { label: 'Original Cost', data: validItems.map(v => parseFloat(v.costPrice) || 0), backgroundColor: '#ff512f' },
-                        { label: 'Updated Cost', data: validItems.map(v => parseFloat(v.updatedCostPrice) || 0), backgroundColor: '#1f4037' }
+                        { label: 'Original Cost', data: validItems.map(v => parseFloat(v.costPrice) || 0), backgroundColor: 'rgba(231,76,60,0.85)', borderColor: '#e74c3c', borderWidth: 1, borderRadius: 3 },
+                        { label: 'Updated Cost',  data: validItems.map(v => parseFloat(v.updatedCostPrice) || 0), backgroundColor: 'rgba(46,204,113,0.85)', borderColor: '#2ecc71', borderWidth: 1, borderRadius: 3 }
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#D4B483', font: { family: 'Jost', size: 11 }, boxWidth: 12 } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#8A7040', font: { family: 'Jost', size: 11 } }, grid: { color: 'rgba(255,215,0,0.05)' } },
+                        y: { ticks: { color: '#8A7040', font: { family: 'Jost', size: 11 } }, grid: { color: 'rgba(255,215,0,0.05)' } }
+                    }
+                }
             });
         }
     }
@@ -280,17 +696,21 @@
         let hist = JSON.parse(localStorage.getItem("jewel_hist") || "[]");
         hist = hist.filter(item => item.codes !== codes);
         hist.unshift({ time: new Date().toLocaleTimeString(), total: total, codes: codes });
-        localStorage.setItem("jewel_hist", JSON.stringify(hist.slice(0, 5))); // Keep last 5
+        localStorage.setItem("jewel_hist", JSON.stringify(hist.slice(0, 5)));
         renderHistoryList();
     }
 
     function renderHistoryList() {
         const hist = JSON.parse(localStorage.getItem("jewel_hist") || "[]");
         const histDiv = document.getElementById("histList");
+        if (hist.length === 0) {
+            histDiv.innerHTML = `<div style="text-align:center; padding:30px 10px; color:var(--text-muted); font-size:11px; letter-spacing:0.2em; text-transform:uppercase;"><div style="font-size:28px; margin-bottom:10px; opacity:0.4; ">&#9671;</div>No searches yet</div>`;
+            return;
+        }
         histDiv.innerHTML = hist.map(h => `
             <div class="history-item" onclick="loadHistory('${h.codes}')">
-                <strong>₹${h.total.toLocaleString('en-IN')}</strong><br>
-                <small>${h.time} - ${h.codes.substring(0,30)}...</small>
+                <strong style="font-size:15px; color:var(--gold-light); display:block; margin-bottom:4px; ">&#8377;${h.total.toLocaleString('en-IN')}</strong>
+                <small style="color:var(--text-muted); font-size:11px; letter-spacing:0.05em;">${h.time} - ${h.codes.substring(0,30)}...</small>
             </div>`).join("");
     }
 
@@ -307,7 +727,7 @@
         document.getElementById("chart-result").style.display = "none";
         if(priceChart) priceChart.destroy();
     }
-    
+
     window.onload = renderHistoryList;
 </script>
 </body>
