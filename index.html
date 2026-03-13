@@ -90,9 +90,9 @@
         }
         h1 {
             font-family: 'Cormorant Garamond', serif;
-            font-size: clamp(1.4rem, 5vw, 2.7rem);
+            font-size: clamp(1.1rem, 5.5vw, 2.7rem);
             font-weight: 300;
-            letter-spacing: 0.18em;
+            letter-spacing: clamp(0.05em, 1.5vw, 0.18em);
             text-transform: uppercase;
             background: linear-gradient(135deg, #FFF0A0 0%, #FFD700 40%, #FFA500 70%, #FFD700 100%);
             -webkit-background-clip: text;
@@ -460,7 +460,6 @@
         @keyframes fadeDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
 
         @media (max-width: 640px) {
-            h1 { font-size: 2.7rem; }
             .container { padding: 20px; }
         }
     </style>
