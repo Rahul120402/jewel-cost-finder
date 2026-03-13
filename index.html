@@ -15,8 +15,8 @@
             --border: rgba(201, 168, 76, 0.22);
             --border-bright: rgba(201, 168, 76, 0.5);
             --text-primary: #F0EAD6;
-            --text-secondary: #B8A07A;
-            --text-muted: #6A5A40;
+            --text-secondary: #d6eaf8;
+            --text-muted: #90caf9;
             --green: #2ecc71;
             --red: #e74c3c;
         }
@@ -25,7 +25,7 @@
 
         body {
             font-family: 'Jost', sans-serif;
-            background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background: linear-gradient(160deg, #005a8e 0%, #0077b6 50%, #0096c7 100%);
             min-height: 100vh;
             padding: 30px 20px;
             color: var(--text-primary);
@@ -103,14 +103,14 @@
         .app-subtitle {
             font-size: 10px;
             letter-spacing: 0.45em;
-            color: var(--text-muted);
+            color: #90caf9;
             text-transform: uppercase;
             margin-top: 6px;
         }
 
         /* ── MAIN CARD ── */
         .container {
-            background: linear-gradient(160deg, #1e2340 0%, #181d35 100%);
+            background: linear-gradient(160deg, #005082 0%, #004066 100%);
             flex: 3;
             min-width: 350px;
             padding: 32px;
@@ -215,7 +215,7 @@
             padding: 14px 16px;
             border-radius: 3px;
             border: 1px solid rgba(255,215,0,0.15);
-            background: rgba(0,0,0,0.3);
+            background: rgba(0,60,100,0.5);
             color: var(--text-primary);
             font-family: 'Jost', sans-serif;
             font-size: 15px;
@@ -226,7 +226,7 @@
         input::placeholder { color: var(--text-muted); }
         input:focus {
             border-color: rgba(255,215,0,0.5);
-            background: rgba(0,0,0,0.4);
+            background: rgba(0,60,100,0.6);
             box-shadow: 0 0 0 3px rgba(255,215,0,0.08), 0 0 20px rgba(255,215,0,0.1);
         }
 
@@ -256,7 +256,7 @@
         }
         #camList {
             padding: 6px 10px;
-            background: rgba(0,0,0,0.4);
+            background: rgba(0,60,100,0.6);
             color: var(--text-secondary);
             border: 1px solid rgba(255,215,0,0.2);
             border-radius: 2px;
@@ -294,7 +294,7 @@
         th {
             padding: 13px 15px;
             text-align: left;
-            background: rgba(255,180,0,0.08);
+            background: rgba(0,40,80,0.6);
             color: var(--gold);
             font-size: 9px;
             font-weight: 600;
@@ -317,7 +317,7 @@
             object-fit: contain;
             border-radius: 3px;
             border: 1px solid rgba(255,215,0,0.15);
-            background: rgba(0,0,0,0.3);
+            background: rgba(0,60,100,0.5);
             cursor: zoom-in;
             transition: all 0.25s ease;
         }
@@ -341,7 +341,7 @@
             margin-top: 25px;
             height: 350px;
             display: none;
-            background: rgba(0,0,0,0.25);
+            background: rgba(0,50,90,0.4);
             padding: 18px;
             border-radius: 4px;
             border: 1px solid var(--border);
@@ -360,7 +360,7 @@
 
         /* ── HISTORY ── */
         .history-panel {
-            background: linear-gradient(160deg, #1e2340 0%, #181d35 100%);
+            background: linear-gradient(160deg, #005082 0%, #004066 100%);
             flex: 1;
             min-width: 280px;
             padding: 26px 20px;
@@ -395,7 +395,7 @@
         }
 
         .history-item {
-            background: rgba(0,0,0,0.25);
+            background: rgba(0,50,90,0.4);
             padding: 13px 14px;
             border-radius: 3px;
             margin-bottom: 8px;
@@ -487,7 +487,7 @@
         <div id="scanner-container">
             <div id="scan-status">&#9989; CODE SCANNED!</div>
             <div id="reader"></div>
-            <div style="background:rgba(0,0,0,0.4); padding:10px; text-align:center; border-top:1px solid var(--border);">
+            <div style="background:rgba(0,50,90,0.6); padding:10px; text-align:center; border-top:1px solid var(--border);">
                 <select id="camList" onchange="restartWithCam(this.value)"></select>
                 <button class="btn clear-btn" style="margin:6px auto 0; width:auto; padding:8px 18px;" onclick="toggleScanner()">Close Camera</button>
             </div>
@@ -709,8 +709,8 @@
         }
         histDiv.innerHTML = hist.map(h => `
             <div class="history-item" onclick="loadHistory('${h.codes}')">
-                <strong style="font-size:15px; color:var(--gold-light); display:block; margin-bottom:4px; ">&#8377;${h.total.toLocaleString('en-IN')}</strong>
-                <small style="color:var(--text-muted); font-size:11px; letter-spacing:0.05em;">${h.time} - ${h.codes.substring(0,30)}...</small>
+                <strong style="font-size:15px; color:#FFD700; display:block; margin-bottom:4px; ">&#8377;${h.total.toLocaleString('en-IN')}</strong>
+                <small style="color:#cce4f7; font-size:11px; letter-spacing:0.05em;">${h.time} - ${h.codes.substring(0,30)}...</small>
             </div>`).join("");
     }
 
