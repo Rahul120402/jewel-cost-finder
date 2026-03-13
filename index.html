@@ -460,65 +460,7 @@
         @keyframes fadeDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
 
         @media (max-width: 640px) {
-            body { padding: 15px 12px; }
-
-            /* Header */
-            .app-header { padding-bottom: 18px; }
-            .crown-line::before, .crown-line::after { max-width: 60px; }
-            .app-subtitle {
-                font-size: 8px;
-                letter-spacing: clamp(0.05em, 2vw, 0.38em);
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-
-            /* Layout - stack vertically */
-            .main-layout { gap: 14px; }
-            .container {
-                padding: 16px;
-                min-width: unset;
-                width: 100%;
-            }
-            .history-panel {
-                min-width: unset;
-                width: 100%;
-                padding: 18px 14px;
-            }
-
-            /* Buttons */
-            .btn {
-                padding: 13px;
-                font-size: 11px;
-                letter-spacing: 0.12em;
-            }
-
-            /* Input */
-            input {
-                padding: 12px 14px;
-                font-size: 14px;
-            }
-
-            /* Table - make it scrollable and compact */
-            .table-responsive { font-size: 12px; }
-            th {
-                padding: 10px 8px;
-                font-size: 8px;
-                letter-spacing: 0.2em;
-            }
-            td { padding: 10px 8px; }
-            .preview-img { width: 55px; height: 55px; }
-
-            /* Chart */
-            .chart-box { height: 260px; padding: 12px; }
-            .chart-box h4 { font-size: 13px; letter-spacing: 0.15em; }
-
-            /* History */
-            .history-panel h3 {
-                font-size: 14px;
-                letter-spacing: 0.2em;
-            }
-            .history-item { padding: 11px 12px; }
+            .container { padding: 20px; }
         }
     </style>
 </head>
